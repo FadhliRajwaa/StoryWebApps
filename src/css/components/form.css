@@ -1,0 +1,171 @@
+/* Form untuk Tambah Cerita */
+section[aria-labelledby="add-story-heading"] {
+  background: #fff;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+section[aria-labelledby="add-story-heading"] h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(1.4rem, 2.5vw, 1.6rem);
+  color: #1e40af;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+section[aria-labelledby="add-story-heading"] label {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: #1f2937;
+}
+
+section[aria-labelledby="add-story-heading"] textarea,
+section[aria-labelledby="add-story-heading"] input[type="file"] {
+  width: 100%;
+  padding: 0.6rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: clamp(0.9rem, 1.4vw, 0.95rem);
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+section[aria-labelledby="add-story-heading"] textarea:focus,
+section[aria-labelledby="add-story-heading"] input:focus {
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  outline: none;
+}
+
+section[aria-labelledby="add-story-heading"] textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+section[aria-labelledby="add-story-heading"] #photo-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+section[aria-labelledby="add-story-heading"] #start-camera {
+  background: #7e22ce;
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: clamp(0.9rem, 1.4vw, 0.95rem);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+section[aria-labelledby="add-story-heading"] #start-camera:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+section[aria-labelledby="add-story-heading"] #video {
+  width: 100%;
+  max-height: 200px;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+section[aria-labelledby="add-story-heading"] #map {
+  width: 100%;
+  height: clamp(200px, 30vh, 300px);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+section[aria-labelledby="add-story-heading"] button[type="submit"] {
+  background: linear-gradient(90deg, #1e40af, #7e22ce);
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: clamp(0.9rem, 1.4vw, 0.95rem);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  width: 100%;
+}
+
+section[aria-labelledby="add-story-heading"] button[type="submit"]:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+section[aria-labelledby="add-story-heading"] button[type="submit"]:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Animasi loading pada tombol Tambah Cerita */
+section[aria-labelledby="add-story-heading"] button[type="submit"].loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+section[aria-labelledby="add-story-heading"] button[type="submit"].loading i {
+  margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  section[aria-labelledby="add-story-heading"] {
+    padding: 1rem;
+    margin: 1rem;
+    margin-bottom: 80px; /* Beri ruang lebih untuk bottom nav */
+  }
+
+  section[aria-labelledby="add-story-heading"] h2 {
+    font-size: 1.3rem;
+  }
+
+  section[aria-labelledby="add-story-heading"] textarea,
+  section[aria-labelledby="add-story-heading"] input[type="file"] {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+
+  section[aria-labelledby="add-story-heading"] #photo-preview,
+  section[aria-labelledby="add-story-heading"] #video {
+    max-height: 180px;
+  }
+
+  section[aria-labelledby="add-story-heading"] #map {
+    height: 200px;
+  }
+
+  section[aria-labelledby="add-story-heading"] #start-camera,
+  section[aria-labelledby="add-story-heading"] button[type="submit"] {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 360px) {
+  section[aria-labelledby="add-story-heading"] #photo-preview,
+  section[aria-labelledby="add-story-heading"] #video {
+    max-height: 160px;
+  }
+
+  section[aria-labelledby="add-story-heading"] #map {
+    height: 180px;
+  }
+}

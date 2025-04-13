@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Story App</title>
+  <link rel="stylesheet" href="/src/css/style.css">
+  <link rel="icon" href="/src/assets/favicon.ico">
+  <!-- Font Awesome CDN dengan integritas yang benar -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+  <header>
+    <nav role="navigation" aria-label="Navigasi utama">
+      <a href="#/home" class="logo-link">
+        <img src="/src/assets/logo.png" alt="Logo Story App" class="logo">
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#/home" aria-current="page">Beranda</a></li>
+        <li id="add-story-item" style="display: none;"><a href="#/add-story">Tambah Cerita</a></li>
+        <li><a href="#/login" id="auth-link">Masuk</a></li>
+        <li><a href="#/register" id="register-link">Daftar</a></li>
+        <li><button id="logout-btn" style="display: none;">Keluar</button></li>
+      </ul>
+    </nav>
+  </header>
+  <main id="main-content" role="main" tabindex="-1">
+    <div id="app"></div>
+  </main>
+  <!-- Bottom Navigation Bar untuk Mobile -->
+  <nav class="bottom-nav" role="navigation" aria-label="Navigasi bawah untuk mobile">
+    <ul class="bottom-nav-links" id="bottom-nav-links">
+      <li>
+        <a href="#/home" class="bottom-nav-item" aria-label="Beranda">
+          <i class="fas fa-home bottom-nav-icon"></i>
+          <span>Beranda</span>
+        </a>
+      </li>
+      <li id="bottom-add-story-item" style="display: none;">
+        <a href="#/add-story" class="bottom-nav-item" aria-label="Tambah Cerita">
+          <i class="fas fa-plus-circle bottom-nav-icon"></i>
+          <span>Tambah</span>
+        </a>
+      </li>
+      <li>
+        <a href="#/login" id="bottom-auth-link" class="bottom-nav-item" aria-label="Masuk atau Profil">
+          <i class="fas fa-user bottom-nav-icon"></i>
+          <span id="bottom-auth-label">Masuk</span>
+        </a>
+      </li>
+      <li id="bottom-register-item">
+        <a href="#/register" class="bottom-nav-item" aria-label="Daftar">
+          <i class="fas fa-user-plus bottom-nav-icon"></i>
+          <span>Daftar</span>
+        </a>
+      </li>
+      <li id="bottom-logout-item" style="display: none;">
+        <button id="bottom-logout-btn" class="bottom-nav-item" aria-label="Keluar">
+          <i class="fas fa-sign-out-alt bottom-nav-icon"></i>
+          <span>Keluar</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+  <script type="module" src="/src/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@300;500;700&display=swap');
+
+/* Import Components */
+@import url('./base.css');
+@import url('./components/auth.css');
+@import url('./components/header.css');
+@import url('./components/story-list.css');
+@import url('./components/story-detail.css');
+@import url('./components/form.css');
+@import url('./components/map.css');
+@import url('./components/toast.css');
+
+.bottom-nav-item.active {
+  color: #1e40af; /* Warna aktif */
+  font-weight: bold;
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+  color: #1e40af; /* Warna ikon aktif */
+}
+
+/* View Transitions (Fallback jika Animation API tidak didukung) */
+::view-transition-old(root) {
+  animation: slide-out 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+             fade-out 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+             scale-down 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+             blur-out 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-new(root) {
+  animation: slide-in 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+             fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+             scale-up 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+             blur-in 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slide-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(-10px); }
+}
+
+@keyframes slide-in {
+  from { transform: translateX(10px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-down {
+  from { transform: scale(1); }
+  to { transform: scale(0.98); }
+}
+
+@keyframes scale-up {
+  from { transform: scale(0.98); }
+  to { transform: scale(1); }
+}
+
+@keyframes blur-out {
+  from { filter: blur(0px); }
+  to { filter: blur(3px); }
+}
+
+@keyframes blur-in {
+  from { filter: blur(3px); }
+  to { filter: blur(0px); }
+}

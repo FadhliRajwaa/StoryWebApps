@@ -1,0 +1,169 @@
+/* Form untuk Login dan Register */
+section[aria-labelledby="login-heading"],
+section[aria-labelledby="register-heading"] {
+  background: #fff;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  margin: 2rem auto;
+}
+
+section[aria-labelledby="login-heading"] h2,
+section[aria-labelledby="register-heading"] h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(1.4rem, 2.5vw, 1.6rem);
+  color: #1e40af;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+section[aria-labelledby="login-heading"] label,
+section[aria-labelledby="register-heading"] label {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: #1f2937;
+}
+
+section[aria-labelledby="login-heading"] input,
+section[aria-labelledby="register-heading"] input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: clamp(0.9rem, 1.4vw, 0.95rem);
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+section[aria-labelledby="login-heading"] input:focus,
+section[aria-labelledby="register-heading"] input:focus {
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  outline: none;
+}
+
+section[aria-labelledby="login-heading"] button,
+section[aria-labelledby="register-heading"] button {
+  background: linear-gradient(90deg, #1e40af, #7e22ce);
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: clamp(0.9rem, 1.4vw, 0.95rem);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  width: 100%;
+}
+
+section[aria-labelledby="login-heading"] button:hover,
+section[aria-labelledby="register-heading"] button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+section[aria-labelledby="login-heading"] button:focus,
+section[aria-labelledby="register-heading"] button:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+section[aria-labelledby="login-heading"] button.loading,
+section[aria-labelledby="register-heading"] button.loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+section[aria-labelledby="login-heading"] button.loading i,
+section[aria-labelledby="register-heading"] button.loading i {
+  margin-right: 8px;
+}
+
+/* Gaya untuk tautan pendaftaran di bawah form login */
+.register-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(0.85rem, 1.3vw, 0.9rem);
+  color: #6b7280;
+}
+
+.register-link a {
+  color: #1e40af;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+.register-link a:hover {
+  color: #7e22ce;
+  text-decoration: underline;
+}
+
+.register-link a:focus {
+  outline: 2px solid #1e40af;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  section[aria-labelledby="login-heading"],
+  section[aria-labelledby="register-heading"] {
+    padding: 1rem;
+    margin: 1rem;
+    margin-bottom: 80px; /* Beri ruang lebih untuk bottom nav */
+  }
+
+  section[aria-labelledby="login-heading"] h2,
+  section[aria-labelledby="register-heading"] h2 {
+    font-size: 1.3rem;
+  }
+
+  section[aria-labelledby="login-heading"] input,
+  section[aria-labelledby="register-heading"] input {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+
+  section[aria-labelledby="login-heading"] button,
+  section[aria-labelledby="register-heading"] button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .register-link {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  section[aria-labelledby="login-heading"] h2,
+  section[aria-labelledby="register-heading"] h2 {
+    font-size: 1.2rem;
+  }
+
+  section[aria-labelledby="login-heading"] input,
+  section[aria-labelledby="register-heading"] input {
+    font-size: 0.85rem;
+    padding: 0.4rem;
+  }
+
+  section[aria-labelledby="login-heading"] button,
+  section[aria-labelledby="register-heading"] button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .register-link {
+    font-size: 0.8rem;
+  }
+}
