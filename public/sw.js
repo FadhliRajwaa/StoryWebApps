@@ -1,4 +1,4 @@
-// sw.js (in the root directory)
+// sw.js (in public/)
 self.addEventListener('notificationclose', (event) => {
   console.log('Service Worker: Notification closed:', event.notification.tag);
   self.clients.matchAll().then(clients => {
@@ -53,8 +53,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Notifikasi Baru';
   const options = {
     body: data.body || 'Anda memiliki notifikasi baru.',
-    icon: '/src/assets/logo.png',
-    badge: '/src/assets/badge.png',
+    icon: '/logo.png',  // Path relatif ke file di dist/
+    badge: '/badge.png',  // Path relatif ke file di dist/
     tag: data.tag || `default-push-${Date.now()}`, // Gunakan tag unik
     renotify: true, // Izinkan renotify
     data: {
