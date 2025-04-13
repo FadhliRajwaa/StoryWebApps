@@ -8,20 +8,26 @@
     }
   ],
   "outputDirectory": "dist",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/sw.js",
-      "dest": "/dist/sw.js",
-      "headers": {
-        "Cache-Control": "public, max-age=0, must-revalidate"
-      }
+      "source": "/sw.js",
+      "destination": "/dist/sw.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/dist/index.html"
+      "source": "/(.*)",
+      "destination": "/dist/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/dist/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/dist/assets/(.*)",
       "headers": [
