@@ -5,18 +5,21 @@ import { Auth } from '../utils/auth.js';
 const API_BASE_URL = 'https://story-api.dicoding.dev/v1';
 
 export class StoryModel {
-  async fetchStories({ page = 1, size = 10, location = 0 }) {
-    const token = Auth.getToken();
-    if (!token) throw new Error('Unauthorized: No token found');
+  async fetchStories() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/stories`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { page, size, location },
+      const response = await fetch('https://story-api.dicoding.dev/v1/stories', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       });
-      return response.data.listStory || [];
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Gagal mengambil cerita');
+      }
+      return data.listStory; // Mengembalikan array cerita
     } catch (error) {
-      console.error('Error fetching stories:', error);
-      throw new Error(error.response?.data?.message || 'Gagal mengambil daftar cerita. Periksa koneksi atau coba lagi.');
+      console.error('StoryModel: Error fetching stories:', error);
+      throw error; // Lempar error agar ditangani oleh presenter
     }
   }
 

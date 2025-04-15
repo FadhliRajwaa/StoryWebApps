@@ -11,66 +11,51 @@
 @import url('./components/map.css');
 @import url('./components/toast.css');
 
+/* View Transition API Animations */
+@supports (view-transition-name: page) {
+  ::view-transition-old(root) {
+    animation: slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation-delay: 0s;
+  }
+
+  ::view-transition-new(root) {
+    animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation-delay: 0.1s;
+  }
+}
+
+@keyframes slide-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.98);
+    filter: blur(5px);
+  }
+}
+
+@keyframes slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(20px) scale(0.98);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Active Bottom Navigation Item */
 .bottom-nav-item.active {
-  color: #1e40af; /* Warna aktif */
+  color: #1e40af;
   font-weight: bold;
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  color: #1e40af; /* Warna ikon aktif */
-}
-
-/* View Transitions (Fallback jika Animation API tidak didukung) */
-::view-transition-old(root) {
-  animation: slide-out 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-             fade-out 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-             scale-down 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-             blur-out 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-::view-transition-new(root) {
-  animation: slide-in 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
-             fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
-             scale-up 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
-             blur-in 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slide-out {
-  from { transform: translateX(0); }
-  to { transform: translateX(-10px); }
-}
-
-@keyframes slide-in {
-  from { transform: translateX(10px); }
-  to { transform: translateX(0); }
-}
-
-@keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes scale-down {
-  from { transform: scale(1); }
-  to { transform: scale(0.98); }
-}
-
-@keyframes scale-up {
-  from { transform: scale(0.98); }
-  to { transform: scale(1); }
-}
-
-@keyframes blur-out {
-  from { filter: blur(0px); }
-  to { filter: blur(3px); }
-}
-
-@keyframes blur-in {
-  from { filter: blur(3px); }
-  to { filter: blur(0px); }
+  color: #1e40af;
 }

@@ -2,6 +2,7 @@ import { StoryModel } from '../models/StoryModel.js';
 import { AddStoryView } from '../views/AddStoryView.js';
 import { initMap, addMarker, clearMarkers } from '../utils/map.js';
 import { showToast } from '../utils/toast.js';
+import { subscribeToNotifications } from '../utils/notifications.js';
 import { Auth } from '../utils/auth.js';
 import router from '../utils/router.js';
 
@@ -14,11 +15,11 @@ export class AddStoryPresenter {
     this.stream = null;
     this.isPhotoCaptured = false;
     this.lastClickedLocation = null;
-    this.isProcessingClick = false; // State untuk mencegah klik ganda
+    this.isProcessingClick = false;
     this.init();
   }
 
-  init() {
+  async init() {
     console.log('AddStoryPresenter: Initializing...');
     if (!Auth.isAuthenticated()) {
       console.log('AddStoryPresenter: User not authenticated, redirecting to login');
@@ -28,16 +29,16 @@ export class AddStoryPresenter {
     }
 
     document.getElementById('app').innerHTML = this.view.render();
-    this.setupMap();
+    await this.setupMap();
     this.setupCamera();
     this.setupForm();
+    this.animateElements(); // Panggil setelah semua setup selesai
   }
 
   async setupMap() {
-    this.map = initMap('map', {
+    this.map = await initMap('map', {
       center: [106.8456, -6.2088],
       zoom: 10,
-      style: 'MapTiler Streets',
     });
     if (!this.map) {
       console.warn('Map initialization failed.');
@@ -58,7 +59,6 @@ export class AddStoryPresenter {
       try {
         this.lastClickedLocation = { lat, lng };
 
-        // Hapus marker lama
         if (this.markers.length > 0) {
           clearMarkers(this.markers);
           this.markers = [];
@@ -66,7 +66,7 @@ export class AddStoryPresenter {
 
         const { marker, address } = await addMarker(this.map, lat, lng);
         if (marker) {
-          this.markers = [marker]; // Simpan hanya satu marker
+          this.markers = [marker];
           const latInput = document.getElementById('lat');
           const lonInput = document.getElementById('lon');
           const locationText = document.getElementById('location-text');
@@ -82,11 +82,10 @@ export class AddStoryPresenter {
             console.log('Location text updated to:', address.details);
           }
 
-          // Nonaktifkan klik selama flyTo
           this.map.off('click');
           this.map.flyTo({ center: [lng, lat], zoom: 14, duration: 1000 });
           setTimeout(() => {
-            this.map.on('click', this.map._listeners.click[0]); // Kembalikan listener
+            this.map.on('click', this.map._listeners.click[0]);
           }, 1000);
 
           showToast({
@@ -118,7 +117,6 @@ export class AddStoryPresenter {
         try {
           const { lat, lng } = this.lastClickedLocation;
 
-          // Hapus marker lama
           if (this.markers.length > 0) {
             clearMarkers(this.markers);
             this.markers = [];
@@ -173,14 +171,18 @@ export class AddStoryPresenter {
       if (file && file.size > 1 * 1024 * 1024) {
         showToast({ message: 'Ukuran foto maksimal 1MB. Pilih file lain.', type: 'error' });
         photoInput.value = '';
-        photoPreview.style.display = 'none';
-        photoPreview.src = '';
-        photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
+        if (photoPreview) {
+          photoPreview.style.display = 'none';
+          photoPreview.src = '';
+          photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
+        }
       } else if (file) {
         const url = URL.createObjectURL(file);
-        photoPreview.src = url;
-        photoPreview.style.display = 'block';
-        photoPreview.alt = 'Pratinjau foto yang dipilih untuk cerita baru';
+        if (photoPreview) {
+          photoPreview.src = url;
+          photoPreview.style.display = 'block';
+          photoPreview.alt = 'Pratinjau foto yang dipilih untuk cerita baru';
+        }
         this.isPhotoCaptured = true;
       }
     });
@@ -191,8 +193,10 @@ export class AddStoryPresenter {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: 1280, height: 720 },
       });
-      video.style.display = 'block';
-      video.srcObject = this.stream;
+      if (video) {
+        video.style.display = 'block';
+        video.srcObject = this.stream;
+      }
       startCameraBtn.textContent = 'Ambil Foto';
       this.isPhotoCaptured = false;
     } catch (error) {
@@ -238,9 +242,11 @@ export class AddStoryPresenter {
 
         if (photoInput.files.length === 1 && photoInput.files[0].name === 'photo.jpg') {
           const url = URL.createObjectURL(blob);
-          photoPreview.src = url;
-          photoPreview.style.display = 'block';
-          photoPreview.alt = 'Pratinjau foto yang diambil dari kamera untuk cerita baru';
+          if (photoPreview) {
+            photoPreview.src = url;
+            photoPreview.style.display = 'block';
+            photoPreview.alt = 'Pratinjau foto yang diambil dari kamera untuk cerita baru';
+          }
           showToast({ message: 'Foto berhasil diambil dan disimpan ke Pilih Foto!', type: 'success' });
           this.isPhotoCaptured = true;
           this.stopCamera(video, startCameraBtn, photoPreview);
@@ -258,10 +264,14 @@ export class AddStoryPresenter {
   stopCamera(video, startCameraBtn, photoPreview) {
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
-      video.srcObject = null;
-      video.style.display = 'none';
+      if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+      }
     }
-    startCameraBtn.textContent = 'Buka Kamera';
+    if (startCameraBtn) {
+      startCameraBtn.textContent = 'Buka Kamera';
+    }
   }
 
   clearMapMarker() {
@@ -374,18 +384,33 @@ export class AddStoryPresenter {
           type: 'success',
         });
 
+        await subscribeToNotifications('Cerita Baru Ditambahkan', {
+          body: 'Cerita Anda telah berhasil diposting!',
+          tag: `story-added-${Date.now()}`,
+        });
+
+        // Lakukan semua manipulasi DOM sebelum navigasi
         this.isPhotoCaptured = false;
         this.clearMapMarker();
         form.reset();
+
         const photoPreview = document.getElementById('photo-preview');
-        photoPreview.style.display = 'none';
-        photoPreview.src = '';
-        photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
-        this.stopCamera(
-          document.getElementById('video'),
-          document.getElementById('start-camera'),
-          photoPreview
-        );
+        const video = document.getElementById('video');
+        const startCameraBtn = document.getElementById('start-camera');
+
+        // Pastikan elemen ada sebelum mengakses properti style
+        if (photoPreview) {
+          photoPreview.style.display = 'none';
+          photoPreview.src = '';
+          photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
+        }
+
+        // Pastikan elemen video dan startCameraBtn ada sebelum memanggil stopCamera
+        if (video && startCameraBtn) {
+          this.stopCamera(video, startCameraBtn, photoPreview);
+        }
+
+        // Navigasi dilakukan terakhir setelah semua manipulasi DOM selesai
         router.navigateTo('#/home');
       } catch (error) {
         console.error('AddStoryPresenter: Error adding story:', error);
@@ -400,5 +425,38 @@ export class AddStoryPresenter {
         submitButton.innerHTML = 'Tambah Cerita';
       }
     });
+  }
+
+  animateElements() {
+    console.log('AddStoryPresenter: Animating elements with Animation API');
+    const form = document.getElementById('add-story-form');
+    const mapContainer = document.getElementById('map');
+    if (form) {
+      form.animate(
+        [
+          { opacity: 0, transform: 'translateY(30px) scale(0.95)', filter: 'blur(5px)' },
+          { opacity: 1, transform: 'translateY(0) scale(1)', filter: 'blur(0px)' },
+        ],
+        {
+          duration: 600,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          fill: 'forwards',
+        }
+      );
+    }
+    if (mapContainer) {
+      mapContainer.animate(
+        [
+          { opacity: 0, transform: 'translateX(20px) rotate(3deg)', filter: 'blur(5px)' },
+          { opacity: 1, transform: 'translateX(0) rotate(0deg)', filter: 'blur(0px)' },
+        ],
+        {
+          duration: 600,
+          delay: 200,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          fill: 'forwards',
+        }
+      );
+    }
   }
 }

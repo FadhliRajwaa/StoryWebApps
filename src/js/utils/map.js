@@ -4,7 +4,8 @@ import axios from 'axios';
 
 const MAPTILER_KEY = 'uFySa8P0xcnYNJ0RPEDk';
 
-// Cache sederhana untuk alamat berdasarkan koordinat
+// Cache untuk gaya peta dan alamat
+const styleCache = new Map();
 const addressCache = new Map();
 
 const mapStyles = {
@@ -23,7 +24,7 @@ async function getAddress(lat, lon) {
     console.log(`Fetching address for lat:${lat}, lon:${lon}`);
     const response = await axios.get(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
-      { timeout: 3000 } // Timeout 3 detik
+      { timeout: 3000 }
     );
     const data = response.data;
     const locationName = data.display_name || `Koordinat ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
@@ -38,12 +39,30 @@ async function getAddress(lat, lon) {
   }
 }
 
+async function loadMapStyle(styleUrl) {
+  if (styleCache.has(styleUrl)) {
+    console.log('Map style loaded from cache:', styleUrl);
+    return styleCache.get(styleUrl);
+  }
+
+  try {
+    const response = await fetch(styleUrl);
+    const styleData = await response.json();
+    styleCache.set(styleUrl, styleData);
+    console.log('Map style cached:', styleUrl);
+    return styleData;
+  } catch (error) {
+    console.error('Error loading map style:', error);
+    throw error;
+  }
+}
+
 export function initMap(elementId, options = {}) {
   const defaultOptions = {
     center: [106.8456, -6.2088],
     zoom: 10,
     interactive: true,
-    style: 'MapTiler Streets',
+    style: localStorage.getItem('preferredMapStyle') || 'MapTiler Streets', // Gunakan gaya tersimpan
   };
   const mapOptions = { ...defaultOptions, ...options };
 
@@ -53,57 +72,82 @@ export function initMap(elementId, options = {}) {
     return null;
   }
 
+  // Tambahkan elemen loading
+  const loadingElement = document.createElement('div');
+  loadingElement.className = 'map-loading';
+  loadingElement.innerHTML = '<div class="spinner" aria-label="Memuat peta"></div>';
+  container.appendChild(loadingElement);
+
   const selectedStyle = mapStyles[mapOptions.style] ? mapOptions.style : 'MapTiler Streets';
   console.log(`Map: Initializing with style: ${selectedStyle}`);
 
-  try {
-    const map = new maplibregl.Map({
-      container: elementId,
-      style: mapStyles[selectedStyle],
-      center: mapOptions.center,
-      zoom: mapOptions.zoom,
-      interactive: mapOptions.interactive,
-    });
-
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-    map.on('load', () => {
-      console.log('Map loaded successfully with style:', selectedStyle);
-      container.setAttribute('aria-label', 'Peta interaktif untuk memilih atau melihat lokasi');
-      const layerControl = document.querySelector('.map-style-selector');
-      if (layerControl) {
-        const radios = layerControl.querySelectorAll('input[type="radio"][name="style-selector"]');
-        radios.forEach(radio => {
-          radio.addEventListener('change', (e) => {
-            const newStyle = e.target.value;
-            console.log('Changing map style to:', newStyle);
-            map.setStyle(mapStyles[newStyle]);
-            const markerEvent = new Event('map:stylechange');
-            map.getContainer().dispatchEvent(markerEvent);
-          });
+  return new Promise((resolve) => {
+    loadMapStyle(mapStyles[selectedStyle]).then((styleData) => {
+      try {
+        const map = new maplibregl.Map({
+          container: elementId,
+          style: styleData,
+          center: mapOptions.center,
+          zoom: mapOptions.zoom,
+          interactive: mapOptions.interactive,
         });
-      }
-    });
 
-    map.on('error', (e) => {
-      console.error('Map error:', e);
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+        map.on('load', () => {
+          console.log('Map loaded successfully with style:', selectedStyle);
+          loadingElement.classList.add('hidden'); // Sembunyikan loading
+          container.setAttribute('aria-label', 'Peta interaktif untuk memilih atau melihat lokasi');
+          const layerControl = document.querySelector('.map-style-selector');
+          if (layerControl) {
+            const radios = layerControl.querySelectorAll('input[type="radio"][name="style-selector"]');
+            radios.forEach(radio => {
+              radio.addEventListener('change', (e) => {
+                const newStyle = e.target.value;
+                console.log('Changing map style to:', newStyle);
+                localStorage.setItem('preferredMapStyle', newStyle); // Simpan preferensi gaya
+                loadMapStyle(mapStyles[newStyle]).then((newStyleData) => {
+                  map.setStyle(newStyleData);
+                  const markerEvent = new Event('map:stylechange');
+                  map.getContainer().dispatchEvent(markerEvent);
+                });
+              });
+            });
+          }
+          resolve(map);
+        });
+
+        map.on('error', (e) => {
+          console.error('Map error:', e);
+          loadingElement.classList.add('hidden');
+          container.innerHTML = `
+            <div class="map-fallback" role="alert">
+              Gagal memuat peta. Pastikan koneksi internet stabil.
+            </div>
+          `;
+          resolve(null);
+        });
+      } catch (error) {
+        console.error('Map initialization failed:', error);
+        loadingElement.classList.add('hidden');
+        container.innerHTML = `
+          <div class="map-fallback" role="alert">
+            Gagal memuat peta. Pastikan koneksi internet stabil.
+          </div>
+        `;
+        resolve(null);
+      }
+    }).catch((error) => {
+      console.error('Failed to load map style:', error);
+      loadingElement.classList.add('hidden');
       container.innerHTML = `
         <div class="map-fallback" role="alert">
           Gagal memuat peta. Pastikan koneksi internet stabil.
         </div>
       `;
+      resolve(null);
     });
-
-    return map;
-  } catch (error) {
-    console.error('Map initialization failed:', error);
-    container.innerHTML = `
-      <div class="map-fallback" role="alert">
-        Gagal memuat peta. Pastikan koneksi internet stabil.
-      </div>
-    `;
-    return null;
-  }
+  });
 }
 
 export async function addMarker(map, lat, lon, fallbackContent = 'Lokasi Cerita Anda') {
@@ -120,7 +164,6 @@ export async function addMarker(map, lat, lon, fallbackContent = 'Lokasi Cerita 
 
   try {
     console.log('Adding marker at:', lon, lat);
-    // Validasi koordinat
     const validLat = Math.max(-90, Math.min(90, parseFloat(lat)));
     const validLon = Math.max(-180, Math.min(180, parseFloat(lon)));
     if (Math.abs(validLat - lat) > 0.000001 || Math.abs(validLon - lon) > 0.000001) {
@@ -137,10 +180,8 @@ export async function addMarker(map, lat, lon, fallbackContent = 'Lokasi Cerita 
         .addTo(map);
     }
 
-    // Panggil getAddress setelah marker
     const address = await getAddress(validLat, validLon);
 
-    // Popup hanya untuk halaman detail
     if (!document.getElementById('add-story-form') && marker) {
       const popupContent = `
         <div class="map-popup-content">
@@ -173,11 +214,6 @@ export async function addMarker(map, lat, lon, fallbackContent = 'Lokasi Cerita 
         if (!popup.isOpen()) {
           popup.setLngLat([validLon, validLat]).addTo(map);
           console.log('Popup added to map at:', validLon, validLat);
-          setTimeout(() => {
-            if (popup.isOpen()) {
-              console.log('Popup confirmed open');
-            }
-          }, 500);
         }
 
         setTimeout(() => {

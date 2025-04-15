@@ -15,25 +15,20 @@ export class StoryDetailPresenter {
   async init() {
     console.log('StoryDetailPresenter: Initializing with storyId:', this.storyId);
     try {
-      // Ambil data cerita
       const story = await this.model.fetchStoryById(this.storyId);
       console.log('StoryDetailPresenter: Story fetched:', story);
 
-      // Render dengan alamat sementara
       let address = { coordinates: 'Tidak tersedia', details: 'Lokasi tidak tersedia' };
       if (story.lat && story.lon) {
         address = { coordinates: `${story.lat.toFixed(6)}, ${story.lon.toFixed(6)}`, details: 'Memuat alamat...' };
       }
 
-      // Render halaman segera
       document.getElementById('app').innerHTML = this.view.render({ ...story, address });
 
-      // Perbarui alamat secara asinkronus
       if (story.lat && story.lon) {
         try {
           const { address: fetchedAddress } = await addMarker(null, story.lat, story.lon);
           address = fetchedAddress || address;
-          // Perbarui DOM dengan alamat baru
           const locationDetails = document.querySelector('.location p:last-child');
           if (locationDetails) {
             locationDetails.textContent = `Alamat Detail: ${address.details}`;
@@ -43,8 +38,8 @@ export class StoryDetailPresenter {
         }
       }
 
-      // Setup peta
       await this.setupMap(story);
+      this.animateElements(); // Panggil setelah semua data dimuat
     } catch (error) {
       console.error('StoryDetailPresenter: Error fetching story:', error);
       showToast({
@@ -57,10 +52,9 @@ export class StoryDetailPresenter {
 
   async setupMap(story) {
     if (story.lat && story.lon) {
-      const map = initMap('map', {
+      const map = await initMap('map', {
         center: [story.lon, story.lat],
         zoom: 14,
-        style: 'MapTiler Streets',
       });
       if (!map) {
         console.warn('Map initialization failed.');
@@ -85,6 +79,39 @@ export class StoryDetailPresenter {
       if (locationText) {
         locationText.style.display = 'none';
       }
+    }
+  }
+
+  animateElements() {
+    console.log('StoryDetailPresenter: Animating elements with Animation API');
+    const storyDetail = document.querySelector('.story-detail');
+    const mapContainer = document.getElementById('map');
+    if (storyDetail) {
+      storyDetail.animate(
+        [
+          { opacity: 0, transform: 'translateY(20px) rotate(1deg)', filter: 'blur(5px)' },
+          { opacity: 1, transform: 'translateY(0) rotate(0deg)', filter: 'blur(0px)' },
+        ],
+        {
+          duration: 600,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          fill: 'forwards',
+        }
+      );
+    }
+    if (mapContainer && mapContainer.style.display !== 'none') {
+      mapContainer.animate(
+        [
+          { opacity: 0, transform: 'translateX(20px)', filter: 'blur(5px)' },
+          { opacity: 1, transform: 'translateX(0)', filter: 'blur(0px)' },
+        ],
+        {
+          duration: 600,
+          delay: 200,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          fill: 'forwards',
+        }
+      );
     }
   }
 }

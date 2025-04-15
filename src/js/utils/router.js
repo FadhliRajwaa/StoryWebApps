@@ -1,4 +1,3 @@
-// src/utils/router.js
 import { AuthPresenter } from '../presenters/AuthPresenter.js';
 import { StoryListPresenter } from '../presenters/StoryListPresenter.js';
 import { StoryDetailPresenter } from '../presenters/StoryDetailPresenter.js';
@@ -8,7 +7,14 @@ import { Auth } from './auth.js';
 export class Router {
   constructor() {
     this.routes = {
-      '/home': () => new StoryListPresenter(),
+      '/home': () => {
+        if (Auth.isAuthenticated()) {
+          return new StoryListPresenter();
+        } else {
+          window.location.hash = '#/login';
+          return new AuthPresenter('login');
+        }
+      },
       '/add-story': () => {
         if (Auth.isAuthenticated()) {
           return new AddStoryPresenter();
@@ -55,56 +61,34 @@ export class Router {
 
     const updateView = () => {
       route(param ? { id: param } : {});
-      if (this.app) {
-        this.app.animate(
-          [
-            { 
-              opacity: 0, 
-              transform: 'translateX(20px) scale(0.98)', 
-              filter: 'blur(3px)' 
-            }, // Mulai: sedikit ke kanan, lebih kecil, dan buram
-            { 
-              opacity: 1, 
-              transform: 'translateX(0) scale(1)', 
-              filter: 'blur(0px)' 
-            }, // Akhir: posisi normal, skala normal, dan jernih
-          ],
-          {
-            duration: 500, // Durasi lebih panjang untuk kesan halus
-            easing: 'cubic-bezier(0.4, 0, 0.2, 1)', // Easing untuk efek smooth
-            fill: 'forwards',
-          }
-        );
-      }
     };
 
     if (document.startViewTransition) {
+      console.log('Router: Using View Transition API');
       document.startViewTransition(() => {
         updateView();
       });
     } else {
+      console.log('Router: Falling back to CSS animation');
       if (this.app) {
         this.app.animate(
           [
-            { 
-              opacity: 1, 
-              transform: 'scale(1)', 
-              filter: 'blur(0px)' 
-            },
-            { 
-              opacity: 0, 
-              transform: 'scale(0.98)', 
-              filter: 'blur(3px)' 
-            },
+            { opacity: 1, transform: 'scale(1)', filter: 'blur(0px)' },
+            { opacity: 0, transform: 'scale(0.98)', filter: 'blur(3px)' },
           ],
-          {
-            duration: 250, // Durasi lebih pendek untuk animasi keluar
-            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            fill: 'forwards',
-          }
+          { duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' }
         ).onfinish = () => {
           updateView();
+          this.app.animate(
+            [
+              { opacity: 0, transform: 'scale(0.98)', filter: 'blur(3px)' },
+              { opacity: 1, transform: 'scale(1)', filter: 'blur(0px)' },
+            ],
+            { duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' }
+          );
         };
+      } else {
+        updateView();
       }
     }
   }
