@@ -1,8 +1,6 @@
-// src/presenters/AddStoryPresenter.js
 import { StoryModel } from '../models/StoryModel.js';
 import { AddStoryView } from '../views/AddStoryView.js';
 import { initMap, addMarker, clearMarkers } from '../utils/map.js';
-import { subscribeToNotifications, cleanOldDismissedNotifications } from '../utils/notifications.js';
 import { showToast } from '../utils/toast.js';
 import { Auth } from '../utils/auth.js';
 import router from '../utils/router.js';
@@ -16,6 +14,7 @@ export class AddStoryPresenter {
     this.stream = null;
     this.isPhotoCaptured = false;
     this.lastClickedLocation = null;
+    this.isProcessingClick = false; // State untuk mencegah klik ganda
     this.init();
   }
 
@@ -34,7 +33,7 @@ export class AddStoryPresenter {
     this.setupForm();
   }
 
-  setupMap() {
+  async setupMap() {
     this.map = initMap('map', {
       center: [106.8456, -6.2088],
       zoom: 10,
@@ -46,64 +45,109 @@ export class AddStoryPresenter {
     }
 
     this.map.off('click');
-    this.map.on('click', (e) => {
+    this.map.on('click', async (e) => {
+      if (this.isProcessingClick) {
+        console.log('Map click ignored: Processing previous click');
+        return;
+      }
+
+      this.isProcessingClick = true;
       const { lng, lat } = e.lngLat;
       console.log('Map clicked at:', lng, lat);
 
-      this.lastClickedLocation = { lat, lng };
+      try {
+        this.lastClickedLocation = { lat, lng };
 
-      if (this.markers.length > 0) {
-        clearMarkers(this.markers);
-        this.markers = [];
-      }
-
-      const marker = addMarker(this.map, lat, lng, 'Lokasi Cerita Anda');
-      if (marker) {
-        this.markers.push(marker);
-        const latInput = document.getElementById('lat');
-        const lonInput = document.getElementById('lon');
-        if (latInput && lonInput) {
-          latInput.value = lat.toFixed(6);
-          lonInput.value = lng.toFixed(6);
-        } else {
-          console.error('Latitude or longitude input not found.');
-        }
-        this.map.flyTo({ center: [lng, lat], zoom: 14, duration: 1000 });
-
-        showToast({
-          message: 'Lokasi berhasil ditandai pada peta!',
-          type: 'success',
-        });
-      } else {
-        console.error('Failed to add marker on click.');
-        showToast({
-          message: 'Gagal menambahkan marker pada peta.',
-          type: 'error',
-        });
-      }
-    });
-
-    this.map.getContainer().addEventListener('map:stylechange', () => {
-      console.log('Map style changed, re-adding marker');
-      if (this.lastClickedLocation) {
-        const { lat, lng } = this.lastClickedLocation;
+        // Hapus marker lama
         if (this.markers.length > 0) {
           clearMarkers(this.markers);
           this.markers = [];
         }
-        const marker = addMarker(this.map, lat, lng, 'Lokasi Cerita Anda');
+
+        const { marker, address } = await addMarker(this.map, lat, lng);
         if (marker) {
-          this.markers.push(marker);
+          this.markers = [marker]; // Simpan hanya satu marker
+          const latInput = document.getElementById('lat');
+          const lonInput = document.getElementById('lon');
+          const locationText = document.getElementById('location-text');
+          if (latInput && lonInput) {
+            latInput.value = lat.toFixed(6);
+            lonInput.value = lng.toFixed(6);
+          } else {
+            console.error('Latitude or longitude input not found.');
+          }
+          if (locationText) {
+            locationText.textContent = address.details;
+            locationText.style.display = 'block';
+            console.log('Location text updated to:', address.details);
+          }
+
+          // Nonaktifkan klik selama flyTo
+          this.map.off('click');
+          this.map.flyTo({ center: [lng, lat], zoom: 14, duration: 1000 });
+          setTimeout(() => {
+            this.map.on('click', this.map._listeners.click[0]); // Kembalikan listener
+          }, 1000);
+
           showToast({
-            message: 'Lokasi berhasil diperbarui setelah perubahan gaya peta!',
+            message: 'Lokasi berhasil ditandai!',
             type: 'success',
           });
         } else {
-          console.error('Failed to re-add marker after style change.');
+          console.error('Failed to add marker on click.');
           showToast({
-            message: 'Gagal memperbarui marker setelah perubahan gaya peta.',
+            message: 'Gagal menambahkan marker pada peta.',
             type: 'error',
           });
+        }
+      } catch (error) {
+        console.error('Error processing map click:', error);
+        showToast({
+          message: 'Gagal memproses lokasi. Coba lagi.',
+          type: 'error',
+        });
+      } finally {
+        this.isProcessingClick = false;
+      }
+    });
+
+    this.map.getContainer().addEventListener('map:stylechange', async () => {
+      console.log('Map style changed, re-adding marker');
+      if (this.lastClickedLocation && !this.isProcessingClick) {
+        this.isProcessingClick = true;
+        try {
+          const { lat, lng } = this.lastClickedLocation;
+
+          // Hapus marker lama
+          if (this.markers.length > 0) {
+            clearMarkers(this.markers);
+            this.markers = [];
+          }
+
+          const { marker, address } = await addMarker(this.map, lat, lng);
+          if (marker) {
+            this.markers = [marker];
+            const locationText = document.getElementById('location-text');
+            if (locationText) {
+              locationText.textContent = address.details;
+              locationText.style.display = 'block';
+              console.log('Location text updated after style change to:', address.details);
+            }
+            showToast({
+              message: 'Lokasi berhasil diperbarui setelah perubahan gaya peta!',
+              type: 'success',
+            });
+          } else {
+            console.error('Failed to re-add marker after style change.');
+            showToast({
+              message: 'Gagal memperbarui marker setelah perubahan gaya peta.',
+              type: 'error',
+            });
+          }
+        } catch (error) {
+          console.error('Error processing style change:', error);
+        } finally {
+          this.isProcessingClick = false;
         }
       }
     });
@@ -131,12 +175,12 @@ export class AddStoryPresenter {
         photoInput.value = '';
         photoPreview.style.display = 'none';
         photoPreview.src = '';
-        photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru'; // Reset alt text
+        photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
       } else if (file) {
         const url = URL.createObjectURL(file);
         photoPreview.src = url;
         photoPreview.style.display = 'block';
-        photoPreview.alt = 'Pratinjau foto yang dipilih untuk cerita baru'; // Update alt text
+        photoPreview.alt = 'Pratinjau foto yang dipilih untuk cerita baru';
         this.isPhotoCaptured = true;
       }
     });
@@ -196,7 +240,7 @@ export class AddStoryPresenter {
           const url = URL.createObjectURL(blob);
           photoPreview.src = url;
           photoPreview.style.display = 'block';
-          photoPreview.alt = 'Pratinjau foto yang diambil dari kamera untuk cerita baru'; // Update alt text
+          photoPreview.alt = 'Pratinjau foto yang diambil dari kamera untuk cerita baru';
           showToast({ message: 'Foto berhasil diambil dan disimpan ke Pilih Foto!', type: 'success' });
           this.isPhotoCaptured = true;
           this.stopCamera(video, startCameraBtn, photoPreview);
@@ -228,9 +272,14 @@ export class AddStoryPresenter {
     this.lastClickedLocation = null;
     const latInput = document.getElementById('lat');
     const lonInput = document.getElementById('lon');
+    const locationText = document.getElementById('location-text');
     if (latInput && lonInput) {
       latInput.value = '';
       lonInput.value = '';
+    }
+    if (locationText) {
+      locationText.textContent = 'Belum ada lokasi yang dipilih';
+      locationText.style.display = 'block';
     }
   }
 
@@ -238,7 +287,7 @@ export class AddStoryPresenter {
     const form = document.getElementById('add-story-form');
     const clearMarkerBtn = document.getElementById('clear-marker-btn');
     const submitButton = form.querySelector('button[type="submit"]');
-    
+
     if (clearMarkerBtn) {
       clearMarkerBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -261,7 +310,6 @@ export class AddStoryPresenter {
       isSubmitting = true;
       console.log('AddStoryPresenter: Form submitted');
 
-      // Aktifkan animasi loading
       submitButton.disabled = true;
       submitButton.classList.add('loading');
       submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
@@ -319,26 +367,8 @@ export class AddStoryPresenter {
 
       formData.delete('style-selector');
 
-      console.log('FormData entries:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-      console.log('Token:', Auth.getToken());
-
       try {
-        const response = await this.model.addStory(formData);
-        console.log('AddStoryPresenter: Story added successfully, triggering notification');
-
-        // Gunakan tag unik untuk setiap notifikasi
-        const notificationTag = `story-added-${Date.now()}`;
-        
-        // Tampilkan notifikasi tanpa memeriksa dismissed karena tag selalu unik
-        await subscribeToNotifications('Cerita Berhasil Dibuat', {
-          body: `Cerita baru: ${description.slice(0, 50)}...`,
-          tag: notificationTag,
-          data: { url: '#/home' },
-        });
-
+        await this.model.addStory(formData);
         showToast({
           message: 'Cerita Anda berhasil diposting!',
           type: 'success',
@@ -350,13 +380,12 @@ export class AddStoryPresenter {
         const photoPreview = document.getElementById('photo-preview');
         photoPreview.style.display = 'none';
         photoPreview.src = '';
-        photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru'; // Reset alt text after form submission
+        photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
         this.stopCamera(
           document.getElementById('video'),
           document.getElementById('start-camera'),
           photoPreview
         );
-        console.log('AddStoryPresenter: Navigating to home');
         router.navigateTo('#/home');
       } catch (error) {
         console.error('AddStoryPresenter: Error adding story:', error);
@@ -370,6 +399,6 @@ export class AddStoryPresenter {
         submitButton.classList.remove('loading');
         submitButton.innerHTML = 'Tambah Cerita';
       }
-    }, { once: true });
+    });
   }
 }

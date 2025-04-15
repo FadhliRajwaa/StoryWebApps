@@ -1,4 +1,3 @@
-// src/views/AddStoryView.js
 export class AddStoryView {
   render() {
     return `
@@ -19,9 +18,20 @@ export class AddStoryView {
 
           <label for="map">Pilih Lokasi</label>
           <div id="map" role="region" aria-label="Peta untuk memilih lokasi cerita"></div>
-          
+          <p id="location-text" class="location" aria-label="Lokasi yang dipilih">Belum ada lokasi yang dipilih</p>
+
           <div class="map-controls">
             <button type="button" id="clear-marker-btn" class="clear-marker-btn">Hapus Marker</button>
+            <div class="map-style-selector" role="radiogroup" aria-label="Pilih gaya peta">
+              <label>
+                <input type="radio" name="style-selector" value="MapTiler Streets" checked>
+                MapTiler Streets
+              </label>
+              <label>
+                <input type="radio" name="style-selector" value="MapTiler OpenStreetMap">
+                MapTiler OpenStreetMap
+              </label>
+            </div>
           </div>
 
           <input type="hidden" id="lat" name="lat" aria-hidden="true" />
@@ -29,17 +39,6 @@ export class AddStoryView {
 
           <button type="submit">Tambah Cerita</button>
         </form>
-        <!-- Pindahkan radio button ke luar form -->
-        <div class="map-style-selector" role="radiogroup" aria-label="Pilih gaya peta">
-          <label>
-            <input type="radio" name="style-selector" value="MapTiler Streets" checked>
-            MapTiler Streets
-          </label>
-          <label>
-            <input type="radio" name="style-selector" value="MapTiler OpenStreetMap">
-            MapTiler OpenStreetMap
-          </label>
-        </div>
       </section>
     `;
   }
