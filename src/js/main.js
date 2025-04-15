@@ -1,4 +1,3 @@
-// src/js/main.js
 import router from './utils/router.js';
 import { Auth } from './utils/auth.js';
 
@@ -88,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', () => {
     console.log('Main: Hashchange event fired, new hash:', window.location.hash);
     updateNav();
-    router.handleRoute();
+    // Tidak perlu memanggil router.handleRoute() karena sudah ditangani di router.js
   });
 
   console.log('Main: Initializing navigation and router...');

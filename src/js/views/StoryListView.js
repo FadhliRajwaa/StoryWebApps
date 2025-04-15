@@ -30,7 +30,7 @@ export class StoryListView {
         <img src="${story.photoUrl}" alt="Foto cerita oleh ${story.name}" loading="lazy" class="story-img"/>
         <div class="story-content">
           <h3 class="story-title">${story.name}</h3>
-          <p class="story-desc">${story.description.slice(0, 100)}...</p>
+          <p class="story-desc">Deskripsi: ${story.description.slice(0, 100)}</p>
           <p class="story-date">${new Date(story.createdAt).toLocaleDateString('id-ID', {
             day: 'numeric',
             month: 'long',

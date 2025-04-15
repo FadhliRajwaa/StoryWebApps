@@ -39,6 +39,7 @@ export class Router {
       },
     };
     this.app = document.getElementById('app');
+    this.currentPresenter = null; // Simpan instance presenter saat ini
   }
 
   init() {
@@ -60,7 +61,12 @@ export class Router {
     console.log('Router: Route key:', routeKey);
 
     const updateView = () => {
-      route(param ? { id: param } : {});
+      // Bersihkan presenter sebelumnya jika ada
+      if (this.currentPresenter && typeof this.currentPresenter.cleanup === 'function') {
+        this.currentPresenter.cleanup();
+      }
+      // Buat instance presenter baru
+      this.currentPresenter = route(param ? { id: param } : {});
     };
 
     if (document.startViewTransition) {
@@ -95,7 +101,8 @@ export class Router {
 
   navigateTo(path) {
     console.log('Router: Navigating to:', path);
-    if (window.location.hash !== path) {
+    const currentHash = window.location.hash || '#/home';
+    if (currentHash !== path) {
       window.location.hash = path;
     } else {
       console.log('Router: Hash unchanged, manually triggering handleRoute');

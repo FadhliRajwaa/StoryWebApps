@@ -16,6 +16,15 @@ export class AddStoryPresenter {
     this.isPhotoCaptured = false;
     this.lastClickedLocation = null;
     this.isProcessingClick = false;
+    // Simpan referensi ke elemen dan handler
+    this.form = null;
+    this.clearMarkerBtn = null;
+    this.startCameraBtn = null;
+    this.photoInput = null;
+    this.submitHandler = null;
+    this.clearMarkerHandler = null;
+    this.startCameraHandler = null;
+    this.photoInputHandler = null;
     this.init();
   }
 
@@ -32,7 +41,7 @@ export class AddStoryPresenter {
     await this.setupMap();
     this.setupCamera();
     this.setupForm();
-    this.animateElements(); // Panggil setelah semua setup selesai
+    this.animateElements();
   }
 
   async setupMap() {
@@ -152,40 +161,47 @@ export class AddStoryPresenter {
   }
 
   setupCamera() {
-    const startCameraBtn = document.getElementById('start-camera');
+    this.startCameraBtn = document.getElementById('start-camera');
+    this.photoInput = document.getElementById('photo');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const photoInput = document.getElementById('photo');
     const photoPreview = document.getElementById('photo-preview');
 
-    startCameraBtn.addEventListener('click', async () => {
-      if (startCameraBtn.textContent === 'Buka Kamera') {
-        await this.startCamera(video, startCameraBtn);
-      } else if (startCameraBtn.textContent === 'Ambil Foto') {
-        this.capturePhoto(video, canvas, photoInput, photoPreview, startCameraBtn);
-      }
-    });
+    // Pastikan elemen ada sebelum menambahkan event listener
+    if (this.startCameraBtn) {
+      this.startCameraHandler = async () => {
+        if (this.startCameraBtn.textContent === 'Buka Kamera') {
+          await this.startCamera(video, this.startCameraBtn);
+        } else if (this.startCameraBtn.textContent === 'Ambil Foto') {
+          this.capturePhoto(video, canvas, this.photoInput, photoPreview, this.startCameraBtn);
+        }
+      };
+      this.startCameraBtn.addEventListener('click', this.startCameraHandler);
+    }
 
-    photoInput.addEventListener('change', () => {
-      const file = photoInput.files[0];
-      if (file && file.size > 1 * 1024 * 1024) {
-        showToast({ message: 'Ukuran foto maksimal 1MB. Pilih file lain.', type: 'error' });
-        photoInput.value = '';
-        if (photoPreview) {
-          photoPreview.style.display = 'none';
-          photoPreview.src = '';
-          photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
+    if (this.photoInput) {
+      this.photoInputHandler = () => {
+        const file = this.photoInput.files[0];
+        if (file && file.size > 1 * 1024 * 1024) {
+          showToast({ message: 'Ukuran foto maksimal 1MB. Pilih file lain.', type: 'error' });
+          this.photoInput.value = '';
+          if (photoPreview) {
+            photoPreview.style.display = 'none';
+            photoPreview.src = '';
+            photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
+          }
+        } else if (file) {
+          const url = URL.createObjectURL(file);
+          if (photoPreview) {
+            photoPreview.src = url;
+            photoPreview.style.display = 'block';
+            photoPreview.alt = 'Pratinjau foto yang dipilih untuk cerita baru';
+          }
+          this.isPhotoCaptured = true;
         }
-      } else if (file) {
-        const url = URL.createObjectURL(file);
-        if (photoPreview) {
-          photoPreview.src = url;
-          photoPreview.style.display = 'block';
-          photoPreview.alt = 'Pratinjau foto yang dipilih untuk cerita baru';
-        }
-        this.isPhotoCaptured = true;
-      }
-    });
+      };
+      this.photoInput.addEventListener('change', this.photoInputHandler);
+    }
   }
 
   async startCamera(video, startCameraBtn) {
@@ -294,22 +310,24 @@ export class AddStoryPresenter {
   }
 
   setupForm() {
-    const form = document.getElementById('add-story-form');
-    const clearMarkerBtn = document.getElementById('clear-marker-btn');
-    const submitButton = form.querySelector('button[type="submit"]');
+    this.form = document.getElementById('add-story-form');
+    this.clearMarkerBtn = document.getElementById('clear-marker-btn');
+    const submitButton = this.form.querySelector('button[type="submit"]');
 
-    if (clearMarkerBtn) {
-      clearMarkerBtn.addEventListener('click', (e) => {
+    // Pastikan elemen ada sebelum menambahkan event listener
+    if (this.clearMarkerBtn) {
+      this.clearMarkerHandler = (e) => {
         e.preventDefault();
         this.clearMapMarker();
         showToast({ message: 'Marker telah dihapus.', type: 'success' });
-      });
+      };
+      this.clearMarkerBtn.addEventListener('click', this.clearMarkerHandler);
     }
 
     let isSubmitting = false;
 
     console.log('AddStoryPresenter: Adding form submit listener');
-    form.addEventListener('submit', async (e) => {
+    this.submitHandler = async (e) => {
       e.preventDefault();
 
       if (isSubmitting) {
@@ -324,7 +342,7 @@ export class AddStoryPresenter {
       submitButton.classList.add('loading');
       submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
 
-      const formData = new FormData(form);
+      const formData = new FormData(this.form);
       const photo = formData.get('photo');
       const description = formData.get('description');
       const lat = formData.get('lat');
@@ -389,28 +407,24 @@ export class AddStoryPresenter {
           tag: `story-added-${Date.now()}`,
         });
 
-        // Lakukan semua manipulasi DOM sebelum navigasi
         this.isPhotoCaptured = false;
         this.clearMapMarker();
-        form.reset();
+        this.form.reset();
 
         const photoPreview = document.getElementById('photo-preview');
         const video = document.getElementById('video');
         const startCameraBtn = document.getElementById('start-camera');
 
-        // Pastikan elemen ada sebelum mengakses properti style
         if (photoPreview) {
           photoPreview.style.display = 'none';
           photoPreview.src = '';
           photoPreview.alt = 'Pratinjau foto yang akan diunggah untuk cerita baru';
         }
 
-        // Pastikan elemen video dan startCameraBtn ada sebelum memanggil stopCamera
         if (video && startCameraBtn) {
           this.stopCamera(video, startCameraBtn, photoPreview);
         }
 
-        // Navigasi dilakukan terakhir setelah semua manipulasi DOM selesai
         router.navigateTo('#/home');
       } catch (error) {
         console.error('AddStoryPresenter: Error adding story:', error);
@@ -424,7 +438,9 @@ export class AddStoryPresenter {
         submitButton.classList.remove('loading');
         submitButton.innerHTML = 'Tambah Cerita';
       }
-    });
+    };
+
+    this.form.addEventListener('submit', this.submitHandler);
   }
 
   animateElements() {
@@ -457,6 +473,41 @@ export class AddStoryPresenter {
           fill: 'forwards',
         }
       );
+    }
+  }
+
+  cleanup() {
+    console.log('AddStoryPresenter: Cleaning up...');
+    // Bersihkan event listener dari form
+    if (this.form && this.submitHandler) {
+      this.form.removeEventListener('submit', this.submitHandler);
+    }
+    // Bersihkan event listener dari clear marker button
+    if (this.clearMarkerBtn && this.clearMarkerHandler) {
+      this.clearMarkerBtn.removeEventListener('click', this.clearMarkerHandler);
+    }
+    // Bersihkan event listener dari start camera button
+    if (this.startCameraBtn && this.startCameraHandler) {
+      this.startCameraBtn.removeEventListener('click', this.startCameraHandler);
+    }
+    // Bersihkan event listener dari photo input
+    if (this.photoInput && this.photoInputHandler) {
+      this.photoInput.removeEventListener('change', this.photoInputHandler);
+    }
+    // Hentikan stream kamera jika ada
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop());
+      this.stream = null;
+    }
+    // Bersihkan marker peta
+    if (this.markers.length > 0) {
+      clearMarkers(this.markers);
+      this.markers = [];
+    }
+    // Bersihkan peta jika ada
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
     }
   }
 }
