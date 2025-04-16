@@ -1,4 +1,4 @@
-/* Story List */
+/* src/css/components/story-list.css */
 main {
   max-width: 1400px;
   margin: clamp(1.5rem, 3vw, 2rem) auto;
@@ -11,7 +11,7 @@ main {
 
 .story-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: clamp(1rem, 2vw, 1.5rem);
   padding: 1rem 0;
 }
@@ -64,6 +64,70 @@ main {
   font-size: clamp(0.8rem, 1.2vw, 0.9rem);
   color: #6b7280;
   margin-bottom: 1rem;
+}
+
+.story-map {
+  width: 100%;
+  height: clamp(150px, 20vh, 180px);
+  border-radius: 8px;
+  margin: 0.8rem 0;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.story-map:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.story-map .map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(243, 244, 246, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.story-map .map-loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.story-map .map-loading .spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #1e40af;
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.location {
+  font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+  color: #4b5563;
+  margin: 0.5rem 0;
+}
+
+.location p {
+  margin: 0.3rem 0;
+}
+
+.location strong {
+  color: #1e40af;
 }
 
 .story-link {
@@ -122,6 +186,10 @@ main {
     height: 180px;
   }
 
+  .story-map {
+    height: 150px;
+  }
+
   .story-content {
     padding: 1rem;
   }
@@ -134,7 +202,8 @@ main {
     font-size: 0.9rem;
   }
 
-  .story-date {
+  .story-date,
+  .location {
     font-size: 0.85rem;
   }
 
@@ -148,10 +217,31 @@ main {
   .story-img {
     height: 160px;
   }
+
+  .story-map {
+    height: 120px;
+  }
+
+  .story-title {
+    font-size: 1rem;
+  }
+
+  .story-desc {
+    font-size: 0.85rem;
+  }
+
+  .story-date,
+  .location {
+    font-size: 0.8rem;
+  }
 }
 
 @media (min-width: 1200px) {
   .story-list {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .story-map {
+    height: 200px;
   }
 }

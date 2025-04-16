@@ -1,10 +1,10 @@
+// src/utils/map.js
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import axios from 'axios';
 
 const MAPTILER_KEY = 'uFySa8P0xcnYNJ0RPEDk';
 
-// Cache untuk gaya peta dan alamat
 const styleCache = new Map();
 const addressCache = new Map();
 
@@ -62,7 +62,7 @@ export function initMap(elementId, options = {}) {
     center: [106.8456, -6.2088],
     zoom: 10,
     interactive: true,
-    style: localStorage.getItem('preferredMapStyle') || 'MapTiler Streets', // Gunakan gaya tersimpan
+    style: localStorage.getItem('preferredMapStyle') || 'MapTiler Streets',
   };
   const mapOptions = { ...defaultOptions, ...options };
 
@@ -72,7 +72,6 @@ export function initMap(elementId, options = {}) {
     return null;
   }
 
-  // Tambahkan elemen loading
   const loadingElement = document.createElement('div');
   loadingElement.className = 'map-loading';
   loadingElement.innerHTML = '<div class="spinner" aria-label="Memuat peta"></div>';
@@ -96,7 +95,7 @@ export function initMap(elementId, options = {}) {
 
         map.on('load', () => {
           console.log('Map loaded successfully with style:', selectedStyle);
-          loadingElement.classList.add('hidden'); // Sembunyikan loading
+          loadingElement.classList.add('hidden');
           container.setAttribute('aria-label', 'Peta interaktif untuk memilih atau melihat lokasi');
           const layerControl = document.querySelector('.map-style-selector');
           if (layerControl) {
@@ -105,7 +104,7 @@ export function initMap(elementId, options = {}) {
               radio.addEventListener('change', (e) => {
                 const newStyle = e.target.value;
                 console.log('Changing map style to:', newStyle);
-                localStorage.setItem('preferredMapStyle', newStyle); // Simpan preferensi gaya
+                localStorage.setItem('preferredMapStyle', newStyle);
                 loadMapStyle(mapStyles[newStyle]).then((newStyleData) => {
                   map.setStyle(newStyleData);
                   const markerEvent = new Event('map:stylechange');
@@ -185,12 +184,13 @@ export async function addMarker(map, lat, lon, fallbackContent = 'Lokasi Cerita 
     if (!document.getElementById('add-story-form') && marker) {
       const popupContent = `
         <div class="map-popup-content">
-          <h3>${address}</h3>
+          <h3>${fallbackContent}</h3>
+          <p>${address}</p>
           <button class="popup-close-btn" aria-label="Tutup popup">✕</button>
         </div>
       `;
       const popup = new maplibregl.Popup({
-        offset: 35,
+        offset: 50, // Increased offset to position popup higher
         className: 'map-popup',
         closeOnClick: false,
         closeButton: false,

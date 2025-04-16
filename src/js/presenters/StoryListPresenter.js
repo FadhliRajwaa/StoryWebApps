@@ -1,5 +1,7 @@
+// src/presenters/StoryListPresenter.js
 import { StoryModel } from '../models/StoryModel.js';
 import { StoryListView } from '../views/StoryListView.js';
+import { initMap, addMarker } from '../utils/map.js';
 import { showToast } from '../utils/toast.js';
 import { Auth } from '../utils/auth.js';
 import router from '../utils/router.js';
@@ -8,13 +10,13 @@ export class StoryListPresenter {
   constructor() {
     this.model = new StoryModel();
     this.view = new StoryListView();
+    this.maps = []; // Simpan referensi peta untuk pembersihan
+    this.markers = []; // Simpan referensi marker untuk pembersihan
     this.init();
   }
 
   async init() {
     console.log('StoryListPresenter: Initializing...');
-
-    // Periksa status autentikasi
     if (!Auth.isAuthenticated()) {
       console.log('StoryListPresenter: User not authenticated, redirecting to login');
       showToast({ message: 'Silakan login untuk melihat daftar cerita.', type: 'warning' });
@@ -30,15 +32,62 @@ export class StoryListPresenter {
     try {
       const stories = await this.model.fetchStories();
       console.log('StoryListPresenter: Stories fetched:', stories);
-      this.view.renderStories(stories || []); // Pastikan stories adalah array
-      this.animateElements(); // Panggil animateElements setelah render berhasil
+      this.view.renderStories(stories || []);
+      await this.setupMaps(stories || []); // Inisialisasi peta setelah render
+      this.animateElements();
     } catch (error) {
       console.error('StoryListPresenter: Error fetching stories:', error);
       showToast({
         message: error.message || 'Gagal memuat cerita. Coba lagi nanti.',
         type: 'error',
       });
-      this.view.renderStories([]); // Render daftar kosong jika gagal
+      this.view.renderStories([]);
+    }
+  }
+
+  async setupMaps(stories) {
+    console.log('StoryListPresenter: Setting up maps for stories...');
+    for (let i = 0; i < stories.length; i++) {
+      const story = stories[i];
+      const mapId = `map-${story.id}-${i}`;
+      if (story.lat && story.lon) {
+        const map = await initMap(mapId, {
+          center: [story.lon, story.lat],
+          zoom: 14,
+          interactive: true, // Aktifkan interaksi seperti zoom dan pan
+        });
+        if (!map) {
+          console.warn(`Failed to initialize map for ${mapId}`);
+          continue;
+        }
+        this.maps.push(map);
+
+        const { marker, address } = await addMarker(map, story.lat, story.lon, story.name);
+        if (marker) {
+          this.markers.push(marker);
+          map.flyTo({ center: [story.lon, story.lat], zoom: 14, duration: 1000 });
+          const addressElement = document.querySelector(`.address-text[data-map-id="${mapId}"]`);
+          if (addressElement) {
+            addressElement.textContent = address.details;
+          }
+        } else {
+          console.warn(`Failed to add marker for ${mapId}`);
+          const addressElement = document.querySelector(`.address-text[data-map-id="${mapId}"]`);
+          if (addressElement) {
+            addressElement.textContent = 'Lokasi tidak diketahui';
+          }
+        }
+      } else {
+        console.log(`No coordinates for story ${story.id}, hiding map`);
+        const mapContainer = document.getElementById(mapId);
+        const locationContainer = document.querySelector(`.location[data-map-id="${mapId}"]`);
+        if (mapContainer) {
+          mapContainer.style.display = 'none';
+        }
+        if (locationContainer) {
+          locationContainer.style.display = 'none';
+        }
+      }
     }
   }
 
@@ -63,5 +112,29 @@ export class StoryListPresenter {
         }
       );
     });
+  }
+
+  cleanup() {
+    console.log('StoryListPresenter: Cleaning up...');
+    this.maps.forEach(map => {
+      if (map) {
+        try {
+          map.remove();
+        } catch (error) {
+          console.error('Error removing map:', error);
+        }
+      }
+    });
+    this.markers.forEach(marker => {
+      if (marker) {
+        try {
+          marker.remove();
+        } catch (error) {
+          console.error('Error removing marker:', error);
+        }
+      }
+    });
+    this.maps = [];
+    this.markers = [];
   }
 }
