@@ -1,4 +1,3 @@
-// src/presenters/StoryListPresenter.js
 import { StoryModel } from '../models/StoryModel.js';
 import { StoryListView } from '../views/StoryListView.js';
 import { initMap, addMarker } from '../utils/map.js';
@@ -10,8 +9,8 @@ export class StoryListPresenter {
   constructor() {
     this.model = new StoryModel();
     this.view = new StoryListView();
-    this.maps = []; // Simpan referensi peta untuk pembersihan
-    this.markers = []; // Simpan referensi marker untuk pembersihan
+    this.maps = [];
+    this.markers = [];
     this.init();
   }
 
@@ -33,7 +32,8 @@ export class StoryListPresenter {
       const stories = await this.model.fetchStories();
       console.log('StoryListPresenter: Stories fetched:', stories);
       this.view.renderStories(stories || []);
-      await this.setupMaps(stories || []); // Inisialisasi peta setelah render
+      this.setupDeleteButtons();
+      await this.setupMaps(stories || []);
       this.animateElements();
     } catch (error) {
       console.error('StoryListPresenter: Error fetching stories:', error);
@@ -45,6 +45,29 @@ export class StoryListPresenter {
     }
   }
 
+  setupDeleteButtons() {
+    const deleteButtons = document.querySelectorAll('.delete-cache-btn');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const storyId = event.target.closest('[data-story-id]')?.dataset.storyId;
+        if (!storyId) {
+          console.warn('StoryListPresenter: No story ID found for delete button');
+          return;
+        }
+        if (confirm('Apakah Anda yakin ingin menghapus cerita ini dari cache?')) {
+          try {
+            await this.model.deleteStoryById(storyId);
+            showToast({ message: 'Cerita berhasil dihapus dari cache!', type: 'success' });
+            await this.loadStories();
+          } catch (error) {
+            console.error('StoryListPresenter: Error deleting story from cache:', error);
+            showToast({ message: 'Gagal menghapus cerita dari cache.', type: 'error' });
+          }
+        }
+      });
+    });
+  }
+
   async setupMaps(stories) {
     console.log('StoryListPresenter: Setting up maps for stories...');
     for (let i = 0; i < stories.length; i++) {
@@ -54,10 +77,11 @@ export class StoryListPresenter {
         const map = await initMap(mapId, {
           center: [story.lon, story.lat],
           zoom: 14,
-          interactive: true, // Aktifkan interaksi seperti zoom dan pan
+          interactive: true,
         });
         if (!map) {
           console.warn(`Failed to initialize map for ${mapId}`);
+          this.hideMapElements(mapId);
           continue;
         }
         this.maps.push(map);
@@ -68,41 +92,38 @@ export class StoryListPresenter {
           map.flyTo({ center: [story.lon, story.lat], zoom: 14, duration: 1000 });
           const addressElement = document.querySelector(`.address-text[data-map-id="${mapId}"]`);
           if (addressElement) {
-            addressElement.textContent = address.details;
+            addressElement.textContent = address?.details || 'Lokasi tidak diketahui';
           }
         } else {
           console.warn(`Failed to add marker for ${mapId}`);
-          const addressElement = document.querySelector(`.address-text[data-map-id="${mapId}"]`);
-          if (addressElement) {
-            addressElement.textContent = 'Lokasi tidak diketahui';
-          }
+          this.hideMapElements(mapId);
         }
       } else {
         console.log(`No coordinates for story ${story.id}, hiding map`);
-        const mapContainer = document.getElementById(mapId);
-        const locationContainer = document.querySelector(`.location[data-map-id="${mapId}"]`);
-        if (mapContainer) {
-          mapContainer.style.display = 'none';
-        }
-        if (locationContainer) {
-          locationContainer.style.display = 'none';
-        }
+        this.hideMapElements(mapId);
       }
     }
+  }
+
+  hideMapElements(mapId) {
+    const mapContainer = document.getElementById(mapId);
+    const locationContainer = document.querySelector(`.location[data-map-id="${mapId}"]`);
+    if (mapContainer) mapContainer.style.display = 'none';
+    if (locationContainer) locationContainer.style.display = 'none';
   }
 
   animateElements() {
     console.log('StoryListPresenter: Animating elements with Animation API');
     const storyItems = document.querySelectorAll('.story-item');
-    if (storyItems.length === 0) {
+    if (!storyItems.length) {
       console.log('StoryListPresenter: No story items to animate');
       return;
     }
     storyItems.forEach((item, index) => {
       item.animate(
         [
-          { opacity: 0, transform: 'translateY(20px) rotate(2deg)', filter: 'blur(3px)' },
-          { opacity: 1, transform: 'translateY(0) rotate(0deg)', filter: 'blur(0px)' },
+          { opacity: 0, transform: 'translateY(20px)' },
+          { opacity: 1, transform: 'translateY(0)' },
         ],
         {
           duration: 500,
@@ -117,21 +138,17 @@ export class StoryListPresenter {
   cleanup() {
     console.log('StoryListPresenter: Cleaning up...');
     this.maps.forEach(map => {
-      if (map) {
-        try {
-          map.remove();
-        } catch (error) {
-          console.error('Error removing map:', error);
-        }
+      try {
+        if (map) map.remove();
+      } catch (error) {
+        console.error('Error removing map:', error);
       }
     });
     this.markers.forEach(marker => {
-      if (marker) {
-        try {
-          marker.remove();
-        } catch (error) {
-          console.error('Error removing marker:', error);
-        }
+      try {
+        if (marker) marker.remove();
+      } catch (error) {
+        console.error('Error removing marker:', error);
       }
     });
     this.maps = [];

@@ -1,13 +1,13 @@
-// src/models/StoryModel.js
 import axios from 'axios';
 import { Auth } from '../utils/auth.js';
+import { IndexedDBManager } from '../utils/indexedDB.js';
 
 const API_BASE_URL = 'https://story-api.dicoding.dev/v1';
 
 export class StoryModel {
   async fetchStories() {
     try {
-      const response = await fetch('https://story-api.dicoding.dev/v1/stories', {
+      const response = await fetch(`${API_BASE_URL}/stories`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -16,10 +16,22 @@ export class StoryModel {
       if (!response.ok) {
         throw new Error(data.message || 'Gagal mengambil cerita');
       }
-      return data.listStory; // Mengembalikan array cerita
+      // Simpan ke IndexedDB
+      await IndexedDBManager.saveStories(data.listStory);
+      return data.listStory;
     } catch (error) {
       console.error('StoryModel: Error fetching stories:', error);
-      throw error; // Lempar error agar ditangani oleh presenter
+      // Fallback ke IndexedDB jika offline
+      try {
+        const cachedStories = await IndexedDBManager.getStories();
+        if (cachedStories.length > 0) {
+          console.log('StoryModel: Returning cached stories from IndexedDB');
+          return cachedStories;
+        }
+        throw new Error('Tidak ada cerita di cache dan koneksi gagal');
+      } catch (dbError) {
+        throw new Error(error.message || 'Gagal mengambil cerita');
+      }
     }
   }
 
@@ -33,7 +45,18 @@ export class StoryModel {
       return response.data.story;
     } catch (error) {
       console.error('Error fetching story:', error);
-      throw new Error(error.response?.data?.message || 'Gagal mengambil detail cerita. Periksa koneksi atau coba lagi.');
+      // Fallback ke IndexedDB
+      try {
+        const stories = await IndexedDBManager.getStories();
+        const story = stories.find(s => s.id === id);
+        if (story) {
+          console.log('StoryModel: Returning cached story from IndexedDB');
+          return story;
+        }
+        throw new Error('Cerita tidak ditemukan di cache');
+      } catch (dbError) {
+        throw new Error(error.response?.data?.message || 'Gagal mengambil detail cerita');
+      }
     }
   }
 
@@ -48,6 +71,11 @@ export class StoryModel {
           Authorization: `Bearer ${token}`,
         },
       });
+      // Simpan cerita baru ke IndexedDB
+      const newStory = response.data.story;
+      if (newStory) {
+        await IndexedDBManager.saveStories([newStory]);
+      }
       return response.data;
     } catch (error) {
       console.error('Error adding story:', error);
@@ -59,7 +87,7 @@ export class StoryModel {
       if (error.response?.status === 401) {
         return await this.addGuestStory(formData);
       }
-      throw new Error(error.response?.data?.message || 'Gagal menambahkan cerita. Periksa koneksi atau coba lagi.');
+      throw new Error(error.response?.data?.message || 'Gagal menambahkan cerita');
     }
   }
 
@@ -68,10 +96,45 @@ export class StoryModel {
       const response = await axios.post(`${API_BASE_URL}/stories/guest`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      // Simpan cerita tamu ke IndexedDB
+      const newStory = response.data.story;
+      if (newStory) {
+        await IndexedDBManager.saveStories([newStory]);
+      }
       return response.data;
     } catch (error) {
       console.error('Error adding guest story:', error);
-      throw new Error(error.response?.data?.message || 'Gagal menambahkan cerita sebagai tamu. Periksa koneksi atau coba lagi.');
+      throw new Error(error.response?.data?.message || 'Gagal menambahkan cerita sebagai tamu');
+    }
+  }
+
+  async deleteStoryById(storyId) {
+    try {
+      const db = await IndexedDBManager.openDB();
+      const transaction = db.transaction(['stories'], 'readwrite');
+      const store = transaction.objectStore('stories');
+      const request = store.delete(storyId);
+
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          console.log(`StoryModel: Story ${storyId} deleted from IndexedDB`);
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+    } catch (error) {
+      console.error('Error deleting story from IndexedDB:', error);
+      throw error;
+    }
+  }
+
+  async clearCachedStories() {
+    try {
+      await IndexedDBManager.deleteAllStories();
+      console.log('StoryModel: All cached stories cleared');
+    } catch (error) {
+      console.error('Error clearing cached stories:', error);
+      throw error;
     }
   }
 }

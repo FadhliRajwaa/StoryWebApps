@@ -37,9 +37,21 @@ export class Router {
           `;
         }
       },
+      '/not-found': () => {
+        const app = document.getElementById('app');
+        if (app) {
+          app.innerHTML = `
+            <section aria-labelledby="not-found-heading">
+              <h2 id="not-found-heading">Halaman Tidak Ditemukan</h2>
+              <p>Maaf, halaman yang Anda cari tidak ada.</p>
+              <a href="#/home" class="back-btn">Kembali ke Beranda</a>
+            </section>
+          `;
+        }
+      },
     };
     this.app = document.getElementById('app');
-    this.currentPresenter = null; // Simpan instance presenter saat ini
+    this.currentPresenter = null;
   }
 
   init() {
@@ -57,15 +69,13 @@ export class Router {
     console.log('Router: Current hash:', hash);
     const [path, param] = hash.split('/').slice(1);
     const routeKey = param ? `/${path}/:id` : `/${path}`;
-    const route = this.routes[routeKey] || this.routes['/home'];
+    const route = this.routes[routeKey] || this.routes['/not-found'];
     console.log('Router: Route key:', routeKey);
 
     const updateView = () => {
-      // Bersihkan presenter sebelumnya jika ada
       if (this.currentPresenter && typeof this.currentPresenter.cleanup === 'function') {
         this.currentPresenter.cleanup();
       }
-      // Buat instance presenter baru
       this.currentPresenter = route(param ? { id: param } : {});
     };
 

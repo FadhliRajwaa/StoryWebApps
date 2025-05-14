@@ -1,5 +1,6 @@
 import router from './utils/router.js';
 import { Auth } from './utils/auth.js';
+import { Workbox } from 'workbox-window';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Main: DOMContentLoaded event fired');
