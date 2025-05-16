@@ -10,25 +10,27 @@
     {
       "src": "/Logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/Logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "/src/assets/screenshot-desktop.png",
+      "src": "/src/assets/screenshoot-dekstop.JPG",
       "sizes": "1280x720",
-      "type": "image/png",
+      "type": "image/jpeg",
       "form_factor": "wide"
     },
     {
-      "src": "/src/assets/screenshot-mobile.png",
+      "src": "/src/assets/screenshoot-mobile.JPG",
       "sizes": "750x1334",
-      "type": "image/png",
+      "type": "image/jpeg",
       "form_factor": "narrow"
     }
   ],
@@ -39,11 +41,28 @@
       "description": "Buat cerita baru dengan foto dan lokasi",
       "icons": [
         {
-          "src": "/src/assets/add-story-icon.png",
+          "src": "/Logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Lihat Favorit",
+      "url": "/#/favorites",
+      "description": "Lihat cerita favorit Anda",
+      "icons": [
+        {
+          "src": "/Logo.png",
           "sizes": "96x96",
           "type": "image/png"
         }
       ]
     }
-  ]
-}
+  ],
+  "categories": ["social", "photos", "lifestyle"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "orientation": "portrait-primary",
+  "lang": "id-ID"
+} 

@@ -1,6 +1,9 @@
 /* Import Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@300;500;700&display=swap');
 
+/* Import Theme */
+@import url('./theme.css');
+
 /* Import Components */
 @import url('./base.css');
 @import url('./components/auth.css');
@@ -52,10 +55,10 @@
 
 /* Active Bottom Navigation Item */
 .bottom-nav-item.active {
-  color: #1e40af;
+  color: var(--primary-color);
   font-weight: bold;
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  color: #1e40af;
+  color: var(--primary-color);
 }

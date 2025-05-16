@@ -3,6 +3,7 @@ import { StoryListPresenter } from '../presenters/StoryListPresenter.js';
 import { StoryDetailPresenter } from '../presenters/StoryDetailPresenter.js';
 import { AddStoryPresenter } from '../presenters/AddStoryPresenter.js';
 import { Auth } from './auth.js';
+import { FavoritesPresenter } from '../presenters/FavoritesPresenter.js';
 
 export class Router {
   constructor() {
@@ -49,6 +50,14 @@ export class Router {
           `;
         }
       },
+      '/favorites': () => {
+        if (Auth.isAuthenticated()) {
+          return new FavoritesPresenter();
+        } else {
+          window.location.hash = '#/login';
+          return new AuthPresenter('login');
+        }
+      }
     };
     this.app = document.getElementById('app');
     this.currentPresenter = null;

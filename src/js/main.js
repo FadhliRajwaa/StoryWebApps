@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Setup Dark Mode
+  setupDarkMode();
+
   // Navbar elements
   const logoutBtn = document.getElementById('logout-btn');
   const authLink = document.getElementById('auth-link');
@@ -65,8 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const href = item.getAttribute('href');
       if (currentHash === href) {
         item.setAttribute('aria-current', 'page');
+        item.classList.add('active');
       } else {
         item.removeAttribute('aria-current');
+        item.classList.remove('active');
       }
     });
   };
@@ -95,3 +100,61 @@ document.addEventListener('DOMContentLoaded', () => {
   updateNav();
   router.init();
 });
+
+function setupDarkMode() {
+  // Check for saved theme preference or use prefer-color-scheme
+  const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const savedTheme = localStorage.getItem('theme');
+  
+  // Apply the theme
+  if (savedTheme === 'dark' || (!savedTheme && prefersDarkMode)) {
+    document.documentElement.classList.add('dark');
+    updateDarkModeIcons(true);
+  } else {
+    document.documentElement.classList.remove('dark');
+    updateDarkModeIcons(false);
+  }
+  
+  // Set up toggle buttons
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const bottomDarkModeToggle = document.getElementById('bottom-dark-mode-toggle');
+  
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', toggleDarkMode);
+  }
+  
+  if (bottomDarkModeToggle) {
+    bottomDarkModeToggle.addEventListener('click', toggleDarkMode);
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  updateDarkModeIcons(isDark);
+  
+  // Animate transition
+  document.body.style.transition = 'background-color 0.5s ease';
+  setTimeout(() => {
+    document.body.style.transition = '';
+  }, 500);
+}
+
+function updateDarkModeIcons(isDark) {
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const bottomDarkModeToggle = document.getElementById('bottom-dark-mode-toggle');
+  
+  if (darkModeToggle) {
+    const iconElement = darkModeToggle.querySelector('i');
+    if (iconElement) {
+      iconElement.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+  }
+  
+  if (bottomDarkModeToggle) {
+    const iconElement = bottomDarkModeToggle.querySelector('i');
+    if (iconElement) {
+      iconElement.className = isDark ? 'fas fa-sun bottom-nav-icon' : 'fas fa-moon bottom-nav-icon';
+    }
+  }
+}

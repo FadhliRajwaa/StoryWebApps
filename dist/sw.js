@@ -10,11 +10,37 @@ precacheAndRoute([
   { url: '/', revision: null },
   { url: '/index.html', revision: null },
   { url: '/src/css/style.css', revision: null },
+  { url: '/src/css/theme.css', revision: null },
+  { url: '/src/css/base.css', revision: null },
+  { url: '/src/css/components/auth.css', revision: null },
+  { url: '/src/css/components/header.css', revision: null },
+  { url: '/src/css/components/story-list.css', revision: null },
+  { url: '/src/css/components/story-detail.css', revision: null },
+  { url: '/src/css/components/form.css', revision: null },
+  { url: '/src/css/components/map.css', revision: null },
+  { url: '/src/css/components/toast.css', revision: null },
   { url: '/Logo.png', revision: null },
   { url: '/src/assets/favicon.ico', revision: null },
   { url: '/manifest.json', revision: null },
   { url: '/src/js/main.js', revision: null },
+  { url: '/src/js/utils/router.js', revision: null },
+  { url: '/src/js/utils/auth.js', revision: null },
+  { url: '/src/js/utils/toast.js', revision: null },
+  { url: '/src/js/utils/map.js', revision: null },
+  { url: '/src/js/utils/indexedDB.js', revision: null },
+  { url: '/src/js/utils/notifications.js', revision: null },
+  { url: '/src/js/views/StoryListView.js', revision: null },
+  { url: '/src/js/views/StoryDetailView.js', revision: null },
+  { url: '/src/js/views/AddStoryView.js', revision: null },
+  { url: '/src/js/views/AuthView.js', revision: null },
+  { url: '/src/js/models/StoryModel.js', revision: null },
+  { url: '/src/js/presenters/StoryListPresenter.js', revision: null },
+  { url: '/src/js/presenters/StoryDetailPresenter.js', revision: null },
+  { url: '/src/js/presenters/AddStoryPresenter.js', revision: null },
+  { url: '/src/js/presenters/AuthPresenter.js', revision: null },
+  { url: '/src/js/presenters/FavoritesPresenter.js', revision: null },
   { url: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css', revision: null },
+  { url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@300;500;700&display=swap', revision: null },
 ]);
 
 // Cache strategi untuk API (NetworkFirst, fallback ke cache)
@@ -30,9 +56,37 @@ registerRoute(
   })
 );
 
+// Cache strategi untuk CSS dan JavaScript (StaleWhileRevalidate)
+registerRoute(
+  ({ request }) => request.destination === 'style',
+  new CacheFirst({
+    cacheName: 'styles-cache',
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+    ],
+  })
+);
+
+// Cache strategi untuk JavaScript (StaleWhileRevalidate)
+registerRoute(
+  ({ request }) => request.destination === 'script',
+  new StaleWhileRevalidate({
+    cacheName: 'scripts-cache',
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+    ],
+  })
+);
+
 // Cache strategi untuk font dan aset eksternal (CacheFirst)
 registerRoute(
-  ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://cdnjs.cloudflare.com',
+  ({ url }) => url.origin === 'https://fonts.googleapis.com' || 
+               url.origin === 'https://fonts.gstatic.com' || 
+               url.origin === 'https://cdnjs.cloudflare.com',
   new CacheFirst({
     cacheName: 'external-assets',
     plugins: [

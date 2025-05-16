@@ -3,11 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Story App - Berbagi cerita dengan foto dan lokasi">
+  <meta name="theme-color" content="#1e40af">
   <title>Story App</title>
+  
+  <!-- Preload Critical Resources -->
+  <link rel="preload" href="/src/css/style.css" as="style">
+  <link rel="preload" href="/src/css/theme.css" as="style">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" as="style">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@300;500;700&display=swap" as="style">
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="/src/css/style.css">
+  <link rel="stylesheet" href="/src/css/theme.css">
+  <link rel="stylesheet" href="/src/css/base.css">
+  <link rel="stylesheet" href="/src/css/components/auth.css">
+  <link rel="stylesheet" href="/src/css/components/header.css">
+  <link rel="stylesheet" href="/src/css/components/story-list.css">
+  <link rel="stylesheet" href="/src/css/components/story-detail.css">
+  <link rel="stylesheet" href="/src/css/components/form.css">
+  <link rel="stylesheet" href="/src/css/components/map.css">
+  <link rel="stylesheet" href="/src/css/components/toast.css">
+  
+  <!-- Favicon & Manifest -->
   <link rel="icon" href="/src/assets/favicon.ico" loading="lazy">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@300;500;700&display=swap">
   <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/Logo.png">
 </head>
 <body>
   <a href="#main-content" class="skip-link">Lewati ke konten utama</a>
@@ -29,6 +54,12 @@
   <main id="main-content" role="main" tabindex="-1">
     <div id="app"></div>
   </main>
+  
+  <!-- Dark Mode Toggle Button -->
+  <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle dark mode">
+    <i class="fas fa-moon"></i>
+  </button>
+  
   <nav class="bottom-nav" role="navigation" aria-label="Navigasi bawah untuk mobile">
     <ul class="bottom-nav-links" id="bottom-nav-links">
       <li>
@@ -41,6 +72,12 @@
         <a href="#/add-story" class="bottom-nav-item" aria-label="Tambah Cerita">
           <i class="fas fa-plus-circle bottom-nav-icon"></i>
           <span>Tambah</span>
+        </a>
+      </li>
+      <li>
+        <a href="#/favorites" id="bottom-favorites-link" class="bottom-nav-item" aria-label="Favorit">
+          <i class="fas fa-heart bottom-nav-icon"></i>
+          <span>Favorit</span>
         </a>
       </li>
       <li>
@@ -59,6 +96,12 @@
         <button id="bottom-logout-btn" class="bottom-nav-item" aria-label="Keluar">
           <i class="fas fa-sign-out-alt bottom-nav-icon"></i>
           <span>Keluar</span>
+        </button>
+      </li>
+      <li id="bottom-theme-toggle">
+        <button id="bottom-dark-mode-toggle" class="bottom-nav-item" aria-label="Ubah Tema">
+          <i class="fas fa-moon bottom-nav-icon"></i>
+          <span>Tema</span>
         </button>
       </li>
     </ul>

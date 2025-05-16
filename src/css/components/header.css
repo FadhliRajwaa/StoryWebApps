@@ -1,11 +1,20 @@
 /* Header */
 header {
-  background: linear-gradient(90deg, #1e40af, #7e22ce);
+  background: rgba(30, 64, 175, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: clamp(0.8rem, 1.5vw, 1rem);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: all var(--transition-normal);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark header {
+  background: rgba(17, 24, 39, 0.85);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 nav {
@@ -21,23 +30,56 @@ nav {
 .logo-link {
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius-lg);
+  padding: 0.2rem;
+  transition: transform var(--transition-normal);
+}
+
+.logo-link::after {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
+  top: -25%;
+  left: -25%;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all var(--transition-normal);
+}
+
+.logo-link:hover {
+  transform: translateY(-2px);
+}
+
+.logo-link:hover::after {
+  opacity: 1;
+  transform: scale(1.2);
+  animation: rotate 4s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg) scale(1.2); }
+  to { transform: rotate(360deg) scale(1.2); }
 }
 
 .logo {
-  height: clamp(40px, 6vw, 48px); /* Ukuran logo lebih besar untuk visibilitas */
-  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)); /* Tambah kontras dan bayangan */
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: clamp(40px, 6vw, 48px);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+  transition: transform var(--transition-bounce), filter var(--transition-normal);
 }
 
 .logo:hover {
-  transform: scale(1.15); /* Efek hover lebih jelas */
-  filter: brightness(1.3) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  transform: scale(1.1);
+  filter: brightness(1.2) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
 .nav-links {
   display: flex;
   list-style: none;
-  gap: clamp(1.2rem, 2vw, 1.5rem);
+  gap: clamp(0.7rem, 2vw, 1.2rem);
   margin: 0;
   align-items: center;
 }
@@ -49,21 +91,49 @@ nav {
   font-family: 'Poppins', sans-serif;
   font-weight: 500;
   font-size: clamp(0.9rem, 1.4vw, 1rem);
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  z-index: 1;
+  transition: all var(--transition-bounce);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links li a::before,
+.nav-links li button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(100%);
+  transition: transform var(--transition-normal);
+  z-index: -1;
 }
 
 .nav-links li a:hover,
 .nav-links li button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nav-links li a:hover::before,
+.nav-links li button:hover::before {
+  transform: translateY(0);
 }
 
 .nav-links li a:focus,
 .nav-links li button:focus {
-  outline: 2px solid #fff;
+  outline: 2px solid rgba(255, 255, 255, 0.4);
   outline-offset: 2px;
 }
 
@@ -73,18 +143,80 @@ nav {
   cursor: pointer;
 }
 
+/* Add icons to navbar links */
+.nav-links li a[href="#/home"]::before,
+.nav-links li button#logout-btn::before {
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+
+.nav-links li a[href="#/home"] {
+  display: flex;
+  align-items: center;
+}
+
+.nav-links li a[href="#/home"]::before {
+  content: '\f015';
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+
+.nav-links li a[href="#/add-story"]::before {
+  content: '\f067';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+
+.nav-links li a[href="#/login"]::before {
+  content: '\f2f6';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+
+.nav-links li a[href="#/register"]::before {
+  content: '\f234';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+
+.nav-links li button#logout-btn::before {
+  content: '\f2f5';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  display: inline-flex;
+  margin-right: 0.5rem;
+}
+
 /* Bottom Navigation Bar untuk Mobile */
 .bottom-nav {
-  display: none; /* Sembunyikan di desktop */
-  background: #fff; /* Background putih */
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  display: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1000; /* Pastikan navbar di atas konten lain */
+  z-index: 1000;
   padding: 0.5rem 0;
-  height: 70px; /* Tetapkan tinggi eksplisit untuk konsistensi */
+  height: 70px;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .bottom-nav {
+  background: rgba(31, 41, 55, 0.9);
+  box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .bottom-nav-links {
@@ -93,112 +225,157 @@ nav {
   list-style: none;
   margin: 0;
   padding: 0;
-  height: 100%; /* Pastikan bottom-nav-links mengisi seluruh tinggi navbar */
-  align-items: center; /* Pusatkan secara vertikal */
+  height: 100%;
+  align-items: center;
 }
 
 .bottom-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* Pusatkan teks dan ikon secara vertikal */
-  gap: 0.1rem; /* Kurangi jarak antara ikon dan teks agar lebih kompak */
-  color: #6b7280; /* Warna teks abu-abu */
+  justify-content: center;
+  gap: 0.15rem;
+  color: var(--text-light);
   text-decoration: none;
   font-family: 'Poppins', sans-serif;
   font-size: 0.75rem;
-  padding: 0.3rem; /* Kurangi padding untuk memberi lebih banyak ruang di atas */
-  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 100%; /* Pastikan item mengisi tinggi navbar */
+  padding: 0.3rem;
+  transition: all var(--transition-normal);
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.bottom-nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 25px;
+  height: 3px;
+  background: var(--gradient-primary);
+  border-radius: 10px;
+  transition: transform var(--transition-normal);
 }
 
 .bottom-nav-item:hover,
-.bottom-nav-item:focus {
-  color: #1e40af; /* Warna saat hover/fokus */
-  transform: scale(1.1);
+.bottom-nav-item:focus,
+.bottom-nav-item.active {
+  color: var(--primary-color);
 }
 
-.bottom-nav-item[aria-current="page"] {
-  color: #1e40af; /* Warna untuk item aktif */
+.bottom-nav-item:hover::after,
+.bottom-nav-item:focus::after,
+.bottom-nav-item.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.bottom-nav-item.active {
+  font-weight: 600;
 }
 
 .bottom-nav-icon {
   font-size: 24px;
-  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-normal);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  opacity: 0.85;
 }
 
 .bottom-nav-item:hover .bottom-nav-icon,
-.bottom-nav-item:focus .bottom-nav-icon {
-  transform: rotate(10deg);
+.bottom-nav-item:focus .bottom-nav-icon,
+.bottom-nav-item.active .bottom-nav-icon {
+  transform: translateY(-3px);
+  opacity: 1;
 }
 
 /* Styling khusus untuk tombol logout */
 #bottom-logout-btn.bottom-nav-item {
-  color: #ef4444; /* Warna merah untuk logout */
+  color: var(--accent-color);
+}
+
+#bottom-logout-btn.bottom-nav-item .bottom-nav-icon {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#bottom-logout-btn.bottom-nav-item::after {
+  background: var(--accent-color);
 }
 
 #bottom-logout-btn.bottom-nav-item:hover,
 #bottom-logout-btn.bottom-nav-item:focus {
-  color: #dc2626;
-  transform: scale(1.1);
+  color: var(--accent-dark);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  header {
+    padding: 0.5rem 0;
+    background: rgba(30, 64, 175, 0.9);
+  }
+  
+  .dark header {
+    background: rgba(17, 24, 39, 0.9);
+  }
+
   nav {
-    justify-content: flex-start; /* Posisikan logo di kiri atas */
+    justify-content: center;
     padding: 0.5rem 1rem;
   }
 
   .logo {
-    height: 36px; /* Ukuran logo lebih kecil tetapi tetap jelas di mobile */
-    filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  }
-
-  .logo:hover {
-    transform: scale(1.15);
-    filter: brightness(1.3) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    height: 36px;
   }
 
   .nav-links {
-    display: none; /* Sembunyikan nav-links di header pada mobile */
+    display: none;
   }
 
   .bottom-nav {
-    display: block; /* Tampilkan bottom nav di mobile */
+    display: block;
   }
 
   .bottom-nav-links {
-    gap: 0.5rem;
+    gap: 0.2rem;
     justify-content: space-around;
   }
 
   .bottom-nav-item {
     flex: 1;
+    font-size: 0.7rem;
+  }
+  
+  .bottom-nav-icon {
+    font-size: 22px;
   }
 }
 
 @media (max-width: 360px) {
   .logo {
-    height: 32px; /* Sesuaikan ukuran logo untuk layar sangat kecil */
+    height: 32px;
   }
 
   .bottom-nav {
-    height: 56px; /* Sedikit lebih kecil untuk layar kecil */
+    height: 60px;
   }
 
   .bottom-nav-item {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     padding: 0.2rem;
   }
 
   .bottom-nav-icon {
-    font-size: 20px;
+    font-size: 18px;
   }
 }
 
 @media (min-width: 769px) {
   .bottom-nav {
-    display: none; /* Sembunyikan bottom nav di desktop */
+    display: none;
   }
 }

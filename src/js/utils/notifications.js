@@ -82,13 +82,13 @@ export async function subscribeToNotifications(title, options) {
 
     const enhancedOptions = {
       ...options,
-      icon: '/src/assets/logo.png',
-      badge: '/src/assets/badge.png',
-      image: '/src/assets/notification-image.jpg',
+      icon: '/Logo.png',
+      badge: '/Logo.png',
+      image: '/Logo.png',
       vibrate: [200, 100, 200],
       actions: [
-        { action: 'view-story', title: 'Lihat Cerita', icon: '/src/assets/view-icon.png' },
-        { action: 'dismiss', title: 'Tutup', icon: '/src/assets/close-icon.png' },
+        { action: 'view-story', title: 'Lihat Cerita', icon: '/Logo.png' },
+        { action: 'dismiss', title: 'Tutup', icon: '/Logo.png' },
       ],
       data: {
         url: window.location.origin + '#/home',

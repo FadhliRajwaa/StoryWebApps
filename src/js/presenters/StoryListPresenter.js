@@ -4,6 +4,8 @@ import { initMap, addMarker } from '../utils/map.js';
 import { showToast } from '../utils/toast.js';
 import { Auth } from '../utils/auth.js';
 import router from '../utils/router.js';
+import { subscribeToNotifications } from '../utils/notifications.js';
+import { IndexedDBManager } from '../utils/indexedDB.js';
 
 export class StoryListPresenter {
   constructor() {
@@ -11,6 +13,10 @@ export class StoryListPresenter {
     this.view = new StoryListView();
     this.maps = [];
     this.markers = [];
+    this.stories = [];
+    this.favorites = [];
+    this.currentFilter = 'all'; // 'all' or 'favorites'
+    this.isOnline = navigator.onLine;
     this.init();
   }
 
@@ -24,25 +30,166 @@ export class StoryListPresenter {
     }
 
     document.getElementById('app').innerHTML = this.view.render();
-    await this.loadStories();
+    
+    // Setup online/offline detection
+    this.setupConnectivityListeners();
+    
+    // Setup buttons
+    this.setupSubscribeButton();
+    this.setupFilterButtons();
+    
+    // Load data and render
+    await this.loadData();
+    this.renderCurrentView();
+  }
+  
+  setupConnectivityListeners() {
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      showToast({ message: 'Anda kembali online! Memuat data terbaru...', type: 'success' });
+      this.loadData().then(() => this.renderCurrentView());
+      this.updateOfflineIndicator(false);
+    });
+    
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+      showToast({ 
+        message: 'Anda sedang offline. Menampilkan data dari cache...', 
+        type: 'warning',
+        duration: 5000
+      });
+      this.updateOfflineIndicator(true);
+    });
+    
+    // Show initial connectivity status
+    this.updateOfflineIndicator(!this.isOnline);
+    if (!this.isOnline) {
+      showToast({ 
+        message: 'Anda sedang offline. Menampilkan data dari cache...', 
+        type: 'warning',
+        duration: 5000
+      });
+    }
   }
 
-  async loadStories() {
+  updateOfflineIndicator(isOffline) {
+    const indicator = document.getElementById('offline-indicator');
+    if (indicator) {
+      indicator.style.display = isOffline ? 'flex' : 'none';
+    }
+  }
+
+  setupSubscribeButton() {
+    const subscribeButton = document.getElementById('subscribe-button');
+    if (subscribeButton) {
+      // Jika offline, non-aktifkan tombol subscribe
+      if (!this.isOnline) {
+        subscribeButton.disabled = true;
+        subscribeButton.style.opacity = '0.7';
+        subscribeButton.setAttribute('aria-disabled', 'true');
+        subscribeButton.title = 'Anda perlu online untuk berlangganan notifikasi';
+      } else {
+        subscribeButton.disabled = false;
+        subscribeButton.style.opacity = '1';
+        subscribeButton.removeAttribute('aria-disabled');
+        subscribeButton.title = 'Langganan notifikasi untuk cerita baru';
+      }
+      
+      subscribeButton.addEventListener('click', async () => {
+        if (!this.isOnline) {
+          showToast({ message: 'Anda offline. Silakan coba lagi ketika online.', type: 'warning' });
+          return;
+        }
+        
+        try {
+          await subscribeToNotifications('Notifikasi Berhasil Diaktifkan', {
+            body: 'Anda akan menerima notifikasi saat ada cerita baru.',
+            tag: `notification-subscribe-${Date.now()}`
+          });
+          showToast({ message: 'Berhasil berlangganan notifikasi!', type: 'success' });
+        } catch (error) {
+          console.error('Error subscribing to notifications:', error);
+          showToast({ message: 'Gagal berlangganan notifikasi. Coba lagi nanti.', type: 'error' });
+        }
+      });
+    }
+  }
+
+  setupFilterButtons() {
+    const showAllBtn = document.getElementById('show-all-btn');
+    const showFavoritesBtn = document.getElementById('show-favorites-btn');
+
+    if (showAllBtn && showFavoritesBtn) {
+      showAllBtn.addEventListener('click', () => {
+        showAllBtn.classList.add('active');
+        showFavoritesBtn.classList.remove('active');
+        this.currentFilter = 'all';
+        this.renderCurrentView();
+      });
+
+      showFavoritesBtn.addEventListener('click', () => {
+        showFavoritesBtn.classList.add('active');
+        showAllBtn.classList.remove('active');
+        this.currentFilter = 'favorites';
+        this.renderCurrentView();
+      });
+    }
+  }
+
+  async loadData() {
     try {
-      const stories = await this.model.fetchStories();
-      console.log('StoryListPresenter: Stories fetched:', stories);
-      this.view.renderStories(stories || []);
-      this.setupDeleteButtons();
-      await this.setupMaps(stories || []);
-      this.animateElements();
+      // Always load favorites from IndexedDB
+      this.favorites = await IndexedDBManager.getFavorites() || [];
+      
+      // If online, try to fetch from API first
+      if (this.isOnline) {
+        try {
+          this.stories = await this.model.fetchStories();
+          // Cache the fetched stories
+          await IndexedDBManager.saveStories(this.stories);
+        } catch (error) {
+          console.warn('Failed to fetch from API, falling back to cache:', error);
+          this.stories = await IndexedDBManager.getStories() || [];
+        }
+      } else {
+        // When offline, use cached data
+        this.stories = await IndexedDBManager.getStories() || [];
+      }
+      
+      console.log('StoryListPresenter: Data loaded', {
+        isOnline: this.isOnline,
+        stories: this.stories.length,
+        favorites: this.favorites.length
+      });
     } catch (error) {
-      console.error('StoryListPresenter: Error fetching stories:', error);
+      console.error('StoryListPresenter: Error loading data:', error);
       showToast({
-        message: error.message || 'Gagal memuat cerita. Coba lagi nanti.',
+        message: error.message || 'Gagal memuat data. Coba lagi nanti.',
         type: 'error',
       });
-      this.view.renderStories([]);
+      this.stories = [];
+      this.favorites = [];
     }
+  }
+
+  renderCurrentView() {
+    // Clear any existing maps
+    this.cleanup();
+    
+    if (this.currentFilter === 'all') {
+      this.view.renderStories(this.stories, this.favorites);
+      this.setupStoryActions(this.stories);
+    } else {
+      this.view.renderStories(this.favorites, this.favorites);
+      this.setupStoryActions(this.favorites);
+    }
+  }
+
+  setupStoryActions(stories) {
+    this.setupDeleteButtons();
+    this.setupFavoriteButtons();
+    this.setupMaps(stories);
+    this.animateElements();
   }
 
   setupDeleteButtons() {
@@ -57,12 +204,65 @@ export class StoryListPresenter {
         if (confirm('Apakah Anda yakin ingin menghapus cerita ini dari cache?')) {
           try {
             await this.model.deleteStoryById(storyId);
+            
+            // Also remove from favorites if it exists there
+            const isFavorite = this.favorites.some(fav => fav.id === storyId);
+            if (isFavorite) {
+              await IndexedDBManager.removeFromFavorites(storyId);
+            }
+            
             showToast({ message: 'Cerita berhasil dihapus dari cache!', type: 'success' });
-            await this.loadStories();
+            
+            // Reload data and rerender
+            await this.loadData();
+            this.renderCurrentView();
           } catch (error) {
             console.error('StoryListPresenter: Error deleting story from cache:', error);
             showToast({ message: 'Gagal menghapus cerita dari cache.', type: 'error' });
           }
+        }
+      });
+    });
+  }
+
+  setupFavoriteButtons() {
+    const favoriteButtons = document.querySelectorAll('.favorite-btn');
+    favoriteButtons.forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        const storyId = button.dataset.storyId;
+        if (!storyId) {
+          console.warn('StoryListPresenter: No story ID found for favorite button');
+          return;
+        }
+        
+        // Check if already favorited
+        const isFavorite = this.favorites.some(fav => fav.id === storyId);
+        
+        try {
+          if (isFavorite) {
+            // Remove from favorites
+            await IndexedDBManager.removeFromFavorites(storyId);
+            showToast({ message: 'Cerita dihapus dari favorit!', type: 'success' });
+          } else {
+            // Add to favorites - find the story first
+            const story = this.stories.find(s => s.id === storyId);
+            if (story) {
+              await IndexedDBManager.addToFavorites(story);
+              showToast({ message: 'Cerita ditambahkan ke favorit!', type: 'success' });
+            } else {
+              throw new Error('Cerita tidak ditemukan');
+            }
+          }
+          
+          // Reload favorites and rerender
+          const updatedFavorites = await IndexedDBManager.getFavorites();
+          this.favorites = updatedFavorites || [];
+          this.renderCurrentView();
+          
+        } catch (error) {
+          console.error('StoryListPresenter: Error toggling favorite status:', error);
+          showToast({ message: 'Gagal mengubah status favorit.', type: 'error' });
         }
       });
     });
