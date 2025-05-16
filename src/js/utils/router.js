@@ -81,6 +81,16 @@ export class Router {
     const route = this.routes[routeKey] || this.routes['/not-found'];
     console.log('Router: Route key:', routeKey);
 
+    // Jika menuju ke home dan user sudah terautentikasi, prioritaskan rendering
+    if (routeKey === '/home' && Auth.isAuthenticated()) {
+      console.log('Router: Direct to home with authenticated user');
+      if (this.currentPresenter && typeof this.currentPresenter.cleanup === 'function') {
+        this.currentPresenter.cleanup();
+      }
+      this.currentPresenter = new StoryListPresenter();
+      return;
+    }
+
     const updateView = () => {
       if (this.currentPresenter && typeof this.currentPresenter.cleanup === 'function') {
         this.currentPresenter.cleanup();

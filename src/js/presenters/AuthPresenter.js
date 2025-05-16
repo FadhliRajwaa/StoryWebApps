@@ -62,18 +62,22 @@ export class AuthPresenter {
         const response = await this.model.register({ name, email, password });
         showToast({ message: 'Pendaftaran berhasil! Silakan login.', type: 'success' });
 
-        await subscribeToNotifications('Pendaftaran Berhasil', {
-          body: 'Selamat, Anda telah berhasil mendaftar! Silakan login.',
-          tag: `register-${Date.now()}`,
-        });
-
+        // Pindahkan navigasi terlebih dahulu, notifikasi berjalan di background
         window.location.hash = '#/login';
+        
+        // Send notification after navigation has started
+        setTimeout(() => {
+          subscribeToNotifications('Pendaftaran Berhasil', {
+            body: 'Selamat, Anda telah berhasil mendaftar! Silakan login.',
+            tag: `register-${Date.now()}`,
+          }).catch(err => console.error('Error sending registration notification:', err));
+        }, 300);
       } catch (error) {
         showToast({
           message: error.message || 'Pendaftaran gagal. Email mungkin sudah terdaftar.',
           type: 'error',
         });
-      } finally {
+        
         this.isLoading = false;
         submitButton.disabled = false;
         submitButton.classList.remove('loading');
@@ -105,24 +109,36 @@ export class AuthPresenter {
         const response = await this.model.login({ email, password });
         localStorage.setItem('token', response.loginResult.token);
         localStorage.setItem('userName', response.loginResult.name);
-        showToast({ message: 'Login berhasil!', type: 'success' });
-
-        await subscribeToNotifications('Login Berhasil', {
-          body: `Selamat datang kembali, ${response.loginResult.name}!`,
-          tag: `login-${Date.now()}`,
-        });
-
-        window.location.hash = '#/home';
-      } catch (error) {
-        showToast({
-          message: error.message || 'Login gagal. Periksa email atau kata sandi.',
-          type: 'error',
-        });
-      } finally {
+        
+        // Reset loading state
         this.isLoading = false;
         submitButton.disabled = false;
         submitButton.classList.remove('loading');
         submitButton.innerHTML = 'Masuk';
+        
+        // Tampilkan pesan sukses
+        showToast({ message: 'Login berhasil!', type: 'success' });
+        
+        // Navigasi terlebih dahulu
+        window.location.hash = '#/home';
+        
+        // Kirim notifikasi di background
+        setTimeout(() => {
+          subscribeToNotifications('Login Berhasil', {
+            body: `Selamat datang kembali, ${response.loginResult.name}!`,
+            tag: `login-${Date.now()}`,
+          }).catch(err => console.error('Error sending login notification:', err));
+        }, 300);
+      } catch (error) {
+        this.isLoading = false;
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+        submitButton.innerHTML = 'Masuk';
+        
+        showToast({
+          message: error.message || 'Login gagal. Periksa email atau kata sandi.',
+          type: 'error',
+        });
       }
     });
   }

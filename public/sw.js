@@ -4,6 +4,7 @@ const { precacheAndRoute } = workbox.precaching;
 const { registerRoute } = workbox.routing;
 const { NetworkFirst, StaleWhileRevalidate, CacheFirst } = workbox.strategies;
 const { CacheableResponsePlugin } = workbox.cacheableResponse;
+const { ExpirationPlugin } = workbox.expiration;
 
 // Precache aset statis yang diperlukan untuk Application Shell
 precacheAndRoute([
@@ -41,6 +42,7 @@ precacheAndRoute([
   { url: '/src/js/presenters/FavoritesPresenter.js', revision: null },
   { url: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css', revision: null },
   { url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@300;500;700&display=swap', revision: null },
+  { url: '/src/assets/placeholder.jpg', revision: null },
 ]);
 
 // Cache strategi untuk API (NetworkFirst, fallback ke cache)
@@ -52,11 +54,15 @@ registerRoute(
       new CacheableResponsePlugin({
         statuses: [0, 200],
       }),
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 60 * 60 * 24, // 1 hari
+      }),
     ],
   })
 );
 
-// Cache strategi untuk CSS dan JavaScript (StaleWhileRevalidate)
+// Cache strategi untuk CSS (CacheFirst) - prioritaskan offline first untuk CSS
 registerRoute(
   ({ request }) => request.destination === 'style',
   new CacheFirst({
@@ -64,6 +70,11 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({
         statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 30,
+        maxAgeSeconds: 60 * 60 * 24 * 7, // 7 hari
+        purgeOnQuotaError: true, // Automatically purge if quota is exceeded
       }),
     ],
   })
@@ -77,6 +88,11 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({
         statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 60 * 60 * 24 * 7, // 7 hari
+        purgeOnQuotaError: true,
       }),
     ],
   })
@@ -93,6 +109,11 @@ registerRoute(
       new CacheableResponsePlugin({
         statuses: [0, 200],
       }),
+      new ExpirationPlugin({
+        maxEntries: 30,
+        maxAgeSeconds: 60 * 60 * 24 * 30, // 30 hari
+        purgeOnQuotaError: true,
+      }),
     ],
   })
 );
@@ -106,11 +127,16 @@ registerRoute(
       new CacheableResponsePlugin({
         statuses: [0, 200],
       }),
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 60 * 60 * 24 * 14, // 14 hari
+        purgeOnQuotaError: true,
+      }),
     ],
   })
 );
 
-// Fallback untuk halaman offline
+// Fallback untuk halaman offline dengan menampilkan app shell dari cache
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -123,7 +149,7 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Notifikasi handling (tetap pertahankan kode notifikasi Anda)
+// Notifikasi handling
 self.addEventListener('notificationclose', (event) => {
   console.log('Service Worker: Notification closed:', event.notification.tag);
   self.clients.matchAll().then(clients => {
@@ -180,11 +206,17 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Anda memiliki notifikasi baru.',
     icon: '/Logo.png',
     badge: '/Logo.png',
-    tag: data.tag || `default-push-${Date.now()}`,
-    renotify: true,
+    image: '/Logo.png',
+    vibrate: [200, 100, 200],
+    actions: [
+      { action: 'view-story', title: 'Lihat Cerita', icon: '/Logo.png' },
+      { action: 'dismiss', title: 'Tutup', icon: '/Logo.png' },
+    ],
     data: {
       url: data.url || '/',
     },
+    tag: data.tag || `default-push-${Date.now()}`,
+    renotify: true, // Izinkan renotify untuk tag yang sama (opsional)
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

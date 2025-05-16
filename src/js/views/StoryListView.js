@@ -4,6 +4,14 @@ export class StoryListView {
       <section class="story-list-container" aria-labelledby="story-list-heading">
         <h2 id="story-list-heading" class="sr-only">Daftar Cerita</h2>
         
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="loading-indicator" style="display: none;">
+          <div class="spinner-container">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <p>Memuat Cerita...</p>
+        </div>
+        
         <div id="offline-indicator" class="offline-indicator" style="display: none;">
           <i class="fas fa-wifi"></i>
           <span>Anda sedang offline. Menampilkan data dari cache.</span>

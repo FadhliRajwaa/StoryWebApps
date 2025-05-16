@@ -4,6 +4,7 @@ import { Auth } from './auth.js';
 import { showToast } from './toast.js';
 
 const API_BASE_URL = 'https://story-api.dicoding.dev/v1';
+// VAPID Public Key dari API Dicoding
 const VAPID_PUBLIC_KEY = 'BCCs2eonMI-6H2ctvFaWg-UYdDv387Vno_bzUzALpB442r2lCnsHmtrx8biyPi_E-1fSGABK_Qs_GlvPoJJqxbk';
 
 export async function subscribeToNotifications(title, options) {
@@ -20,7 +21,11 @@ export async function subscribeToNotifications(title, options) {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.warn('Notification permission denied');
-      showToast({ message: title, type: 'success' });
+      showToast({ 
+        message: 'Izinkan notifikasi untuk mendapatkan update cerita terbaru', 
+        type: 'warning',
+        duration: 5000
+      });
       return;
     }
 
@@ -30,10 +35,21 @@ export async function subscribeToNotifications(title, options) {
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
       console.log('Notifications: No existing subscription, creating new one');
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        console.log('Notifications: Push subscription created successfully');
+      } catch (subscriptionError) {
+        console.error('Notifications: Error creating push subscription:', subscriptionError);
+        showToast({ 
+          message: 'Tidak dapat membuat langganan notifikasi push. Coba lagi nanti.',
+          type: 'error',
+          duration: 5000
+        });
+        return;
+      }
     } else {
       console.log('Notifications: Existing subscription found, reusing it');
     }
@@ -49,23 +65,34 @@ export async function subscribeToNotifications(title, options) {
     const subscriptionKey = arrayBufferToBase64(subscription.getKey('auth'));
     if (!localStorage.getItem(`subscription:${subscriptionKey}`)) {
       console.log('Notifications: Sending subscription to server');
-      await axios.post(
-        `${API_BASE_URL}/notifications/subscribe`,
-        {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
-            auth: subscriptionKey,
+      try {
+        await axios.post(
+          `${API_BASE_URL}/notifications/subscribe`,
+          {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+              auth: subscriptionKey,
+            },
           },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      localStorage.setItem(`subscription:${subscriptionKey}`, 'true');
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        localStorage.setItem(`subscription:${subscriptionKey}`, 'true');
+        console.log('Notifications: Successfully sent subscription to server');
+      } catch (subscribeError) {
+        console.error('Notifications: Error sending subscription to server:', subscribeError);
+        showToast({
+          message: 'Gagal mendaftarkan langganan ke server. Coba lagi nanti.',
+          type: 'error',
+          duration: 5000
+        });
+        // Still continue to show local notification
+      }
     } else {
       console.log('Notifications: Subscription already sent to server');
     }
@@ -80,21 +107,27 @@ export async function subscribeToNotifications(title, options) {
       return;
     }
 
+    // Ensure we're using the absolute path to Logo.png
+    const logoUrl = new URL('/Logo.png', window.location.origin).href;
+    
+    // Enhance notification options
     const enhancedOptions = {
       ...options,
-      icon: '/Logo.png',
-      badge: '/Logo.png',
-      image: '/Logo.png',
+      icon: logoUrl,
+      badge: logoUrl,
+      image: logoUrl,
       vibrate: [200, 100, 200],
       actions: [
-        { action: 'view-story', title: 'Lihat Cerita', icon: '/Logo.png' },
-        { action: 'dismiss', title: 'Tutup', icon: '/Logo.png' },
+        { action: 'view-story', title: 'Lihat Cerita', icon: logoUrl },
+        { action: 'dismiss', title: 'Tutup', icon: logoUrl },
       ],
       data: {
         url: window.location.origin + '#/home',
+        ...options.data,
       },
       tag: notificationTag, // Gunakan tag unik
       renotify: true, // Izinkan renotify untuk tag yang sama (opsional)
+      requireInteraction: true, // Membutuhkan interaksi pengguna untuk menutup
     };
 
     console.log('Notifications: Showing notification with options:', enhancedOptions);
@@ -110,9 +143,15 @@ export async function subscribeToNotifications(title, options) {
         localStorage.setItem(dismissedKey, 'true'); // Mark as dismissed
       }
     });
+    
+    return subscription; // Return subscription object for further use if needed
   } catch (error) {
     console.error('Notifications: Error subscribing to notifications:', error);
-    showToast({ message: title, type: 'success' });
+    showToast({ 
+      message: 'Terjadi kesalahan saat berlangganan notifikasi. Coba lagi nanti.',
+      type: 'error',
+      duration: 5000
+    });
   }
 }
 
@@ -132,6 +171,7 @@ export function cleanOldDismissedNotifications(maxEntries = 50) {
   }
 }
 
+// Konversi VAPID key dari base64 ke Uint8Array yang dibutuhkan oleh PushManager
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -140,6 +180,10 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function arrayBufferToBase64(buffer) {
+  if (!buffer) {
+    console.error('Notifications: Invalid buffer provided to arrayBufferToBase64');
+    return '';
+  }
   const binary = String.fromCharCode(...new Uint8Array(buffer));
   return window.btoa(binary);
 }

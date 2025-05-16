@@ -17,6 +17,7 @@ export class StoryListPresenter {
     this.favorites = [];
     this.currentFilter = 'all'; // 'all' or 'favorites'
     this.isOnline = navigator.onLine;
+    this.isLoading = false;
     this.init();
   }
 
@@ -31,6 +32,9 @@ export class StoryListPresenter {
 
     document.getElementById('app').innerHTML = this.view.render();
     
+    // Show loading state
+    this.showLoading(true);
+    
     // Setup online/offline detection
     this.setupConnectivityListeners();
     
@@ -38,9 +42,34 @@ export class StoryListPresenter {
     this.setupSubscribeButton();
     this.setupFilterButtons();
     
-    // Load data and render
-    await this.loadData();
-    this.renderCurrentView();
+    try {
+      // Load data and render
+      await this.loadData();
+      this.renderCurrentView();
+    } catch (error) {
+      console.error('StoryListPresenter: Error during initialization:', error);
+      showToast({ 
+        message: 'Terjadi kesalahan saat memuat data. Mencoba menggunakan data cache.', 
+        type: 'error',
+        duration: 5000
+      });
+      
+      // Attempt to use cache even on error
+      this.stories = await IndexedDBManager.getStories() || [];
+      this.favorites = await IndexedDBManager.getFavorites() || [];
+      this.renderCurrentView();
+    } finally {
+      // Hide loading state
+      this.showLoading(false);
+    }
+  }
+  
+  showLoading(isLoading) {
+    this.isLoading = isLoading;
+    const loadingElement = document.getElementById('loading-indicator');
+    if (loadingElement) {
+      loadingElement.style.display = isLoading ? 'flex' : 'none';
+    }
   }
   
   setupConnectivityListeners() {
@@ -49,6 +78,7 @@ export class StoryListPresenter {
       showToast({ message: 'Anda kembali online! Memuat data terbaru...', type: 'success' });
       this.loadData().then(() => this.renderCurrentView());
       this.updateOfflineIndicator(false);
+      this.setupSubscribeButton(); // Update subscribe button state
     });
     
     window.addEventListener('offline', () => {
@@ -59,6 +89,7 @@ export class StoryListPresenter {
         duration: 5000
       });
       this.updateOfflineIndicator(true);
+      this.setupSubscribeButton(); // Update subscribe button state
     });
     
     // Show initial connectivity status
@@ -82,20 +113,29 @@ export class StoryListPresenter {
   setupSubscribeButton() {
     const subscribeButton = document.getElementById('subscribe-button');
     if (subscribeButton) {
-      // Jika offline, non-aktifkan tombol subscribe
+      // Jika offline, non-aktifkan tombol subscribe tapi tetap tampilkan
       if (!this.isOnline) {
         subscribeButton.disabled = true;
         subscribeButton.style.opacity = '0.7';
         subscribeButton.setAttribute('aria-disabled', 'true');
         subscribeButton.title = 'Anda perlu online untuk berlangganan notifikasi';
+        subscribeButton.classList.add('disabled');
+        subscribeButton.innerHTML = '<i class="fas fa-bell-slash"></i> Langganan Notifikasi (Offline)';
       } else {
         subscribeButton.disabled = false;
         subscribeButton.style.opacity = '1';
         subscribeButton.removeAttribute('aria-disabled');
         subscribeButton.title = 'Langganan notifikasi untuk cerita baru';
+        subscribeButton.classList.remove('disabled');
+        subscribeButton.innerHTML = '<i class="fas fa-bell"></i> Langganan Notifikasi';
       }
       
-      subscribeButton.addEventListener('click', async () => {
+      // Remove existing event listeners to prevent duplicates
+      const newButton = subscribeButton.cloneNode(true);
+      subscribeButton.parentNode.replaceChild(newButton, subscribeButton);
+      
+      // Add new event listener to the cloned button
+      newButton.addEventListener('click', async () => {
         if (!this.isOnline) {
           showToast({ message: 'Anda offline. Silakan coba lagi ketika online.', type: 'warning' });
           return;
@@ -107,6 +147,16 @@ export class StoryListPresenter {
             tag: `notification-subscribe-${Date.now()}`
           });
           showToast({ message: 'Berhasil berlangganan notifikasi!', type: 'success' });
+          
+          // Menambahkan efek visual setelah berhasil subscribe
+          newButton.innerHTML = '<i class="fas fa-bell"></i> Berlangganan ✓';
+          newButton.classList.add('subscribed');
+          
+          setTimeout(() => {
+            newButton.innerHTML = '<i class="fas fa-bell"></i> Langganan Notifikasi';
+            newButton.classList.remove('subscribed');
+          }, 3000);
+          
         } catch (error) {
           console.error('Error subscribing to notifications:', error);
           showToast({ message: 'Gagal berlangganan notifikasi. Coba lagi nanti.', type: 'error' });
@@ -150,10 +200,16 @@ export class StoryListPresenter {
         } catch (error) {
           console.warn('Failed to fetch from API, falling back to cache:', error);
           this.stories = await IndexedDBManager.getStories() || [];
+          if (this.stories.length === 0) {
+            throw new Error('Tidak ada data cerita yang tersedia');
+          }
         }
       } else {
         // When offline, use cached data
         this.stories = await IndexedDBManager.getStories() || [];
+        if (this.stories.length === 0) {
+          throw new Error('Tidak ada data cerita cached yang tersedia');
+        }
       }
       
       console.log('StoryListPresenter: Data loaded', {
@@ -169,6 +225,7 @@ export class StoryListPresenter {
       });
       this.stories = [];
       this.favorites = [];
+      throw error; // Re-throw to handle in init()
     }
   }
 
